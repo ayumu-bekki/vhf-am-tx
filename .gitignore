@@ -7,7 +7,6 @@ build/
 .cache/
 sdkconfig
 sdkconfig.old
-main/version.h
 managed_components/
 
 # KiCad backups / lock / autosave

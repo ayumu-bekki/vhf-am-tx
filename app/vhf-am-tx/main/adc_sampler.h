@@ -39,6 +39,15 @@ class AdcSampler {
   /// the carrier level rather than to silence-with-a-click.
   float IRAM_ATTR ReadMicrophone();
 
+  /// Converts the latest battery average to volts. Call from a task (the
+  /// main loop) at least every 100ms.
+  ///
+  /// The conversion lives here rather than in the DMA callback because
+  /// adc_cali_raw_to_voltage() is in flash: the callback is registered
+  /// IRAM-safe and keeps running while NVS has the flash cache disabled, and
+  /// calling into flash from there dies with a cache access error.
+  void UpdateBattery();
+
   /// Battery voltage in volts, updated at 10Hz.
   float GetBatteryVoltage() const {
     return battery_voltage_.load(std::memory_order_relaxed);
@@ -51,14 +60,6 @@ class AdcSampler {
   /// cut transmission on every key down (spec 3.6).
   float GetBatteryAverageVoltage() const {
     return battery_average_.load(std::memory_order_relaxed);
-  }
-
-  /// Lowest voltage seen since the last reset, for checking rail droop.
-  float GetBatteryMinimum() const {
-    return battery_minimum_.load(std::memory_order_relaxed);
-  }
-  void ResetBatteryMinimum() {
-    battery_minimum_.store(99.0f, std::memory_order_relaxed);
   }
 
   /// Measured DC bias of the microphone input, in raw ADC counts.
@@ -108,12 +109,18 @@ class AdcSampler {
   uint32_t clip_run_;
   std::atomic<bool> clipping_;
 
-  // Battery accumulation, 2500 samples per 10Hz update.
+  // Battery accumulation in the callback, 2500 samples per 10Hz update. The
+  // mean raw code is handed to UpdateBattery() through battery_raw_mean_;
+  // battery_seq_ counts the hand-overs.
   uint32_t battery_count_;
   uint64_t battery_sum_;
+  std::atomic<uint32_t> battery_raw_mean_;
+  std::atomic<uint32_t> battery_seq_;
+
+  // Task side (UpdateBattery() only).
+  uint32_t battery_seq_seen_;
   std::atomic<float> battery_voltage_;
   std::atomic<float> battery_average_;
-  std::atomic<float> battery_minimum_;
   float battery_history_[hardware_config::kBatInhibitAvgCount];
   uint32_t battery_history_index_;
   bool battery_history_filled_;

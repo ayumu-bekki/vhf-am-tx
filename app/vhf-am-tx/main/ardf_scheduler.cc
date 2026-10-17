@@ -47,10 +47,7 @@ ArdfScheduler::ArdfScheduler()
       phase_(Phase::kWaiting),
       slot_done_(false),
       cycle_start_us_(0),
-      last_call_us_(0) {
-  std::strncpy(callsign_, hardware_config::kCallDefault, sizeof(callsign_) - 1);
-  callsign_[sizeof(callsign_) - 1] = '\0';
-}
+      last_call_us_(0) {}
 
 void ArdfScheduler::SetCallsign(const char* callsign) {
   if (!callsign) {
@@ -65,9 +62,13 @@ uint32_t ArdfScheduler::UnitsToMs(uint32_t units) const {
   return units * morse::UnitMs(wpm);
 }
 
-void ArdfScheduler::Start() {
+bool ArdfScheduler::Start() {
   if (running_) {
-    return;
+    return true;
+  }
+  if (!HasCallsign()) {
+    ESP_LOGW(kTag, "ARDF start refused: no callsign set");
+    return false;
   }
   running_ = true;
   cycle_start_us_ = NowUs();
@@ -82,6 +83,7 @@ void ArdfScheduler::Start() {
 
   ESP_LOGI(kTag, "ARDF run started (%s, slot %u)",
            morse::GetArdfIdText(ardf_id_), morse::GetArdfSlot(ardf_id_));
+  return true;
 }
 
 void ArdfScheduler::Stop() {
@@ -203,13 +205,26 @@ void ArdfScheduler::Tick() {
       break;
 
     case Phase::kStarting:
+      if (!in_slot) {
+        // The slot closed before the carrier came up (a long inhibit, say).
+        phase_ = Phase::kStopping;
+        break;
+      }
+      if (tx_->GetState() == TxState::kIdle) {
+        // The controller dropped the start, e.g. the battery inhibit tripped
+        // between the request and its Tick(). Ask again, or go back to
+        // waiting if it is refused outright.
+        if (!tx_->RequestStart()) {
+          phase_ = Phase::kWaiting;
+        }
+        break;
+      }
       if (tx_->GetState() != TxState::kTxReady) {
         break;
       }
       // Callsign first, every slot (spec 10.5). The ARDF identifier is a
       // competition marker, not a station identification, so the callsign is
       // required separately.
-      keyer_->SetWpm(keyer_->GetWpm());
       SendWithWordGap(keyer_, callsign_);
       tx_->SetKeyed(true);
       last_call_us_ = NowUs();

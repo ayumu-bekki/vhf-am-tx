@@ -12,7 +12,7 @@ namespace {
 constexpr float kPi = 3.14159265358979323846f;
 // Sine table is stored as int16_t; this is the full-scale value.
 constexpr float kSineScale = 32767.0f;
-constexpr float kSineInvScale = 1.0f / 32767.0f;
+constexpr float kSineInvScale = 1.0f / kSineScale;
 }  // namespace
 
 ToneGenerator::ToneGenerator()
@@ -50,10 +50,12 @@ void ToneGenerator::Initialize() {
   initialized_ = true;
 }
 
-void ToneGenerator::Reset() {
-  phase_ = 0;
-  envelope_index_ = 0;
-  key_down_ = false;
+float ToneGenerator::NextSine() {
+  // The top kSineTableBits of the accumulator index the table.
+  const int16_t sample =
+      sine_table_[phase_ >> (32 - hardware_config::kSineTableBits)];
+  phase_ += hardware_config::kTonePhaseIncrement;
+  return static_cast<float>(sample) * kSineInvScale * amplitude_;
 }
 
 float ToneGenerator::Next() {
@@ -72,13 +74,8 @@ float ToneGenerator::Next() {
 
   if (keying_mode_ == KeyingMode::kCarrierKeying) {
     // Pull x down to -1 (duty 0) on key up, ramping through the same
-    // envelope so the edges stay soft.
-    // x = -1 at envelope 0, x = tone at envelope 1.
-    const int16_t sample =
-        sine_table_[phase_ >> (32 - 8)];  // top 8 bits index the 256 table
-    phase_ += hardware_config::kTonePhaseIncrement;
-    const float tone = static_cast<float>(sample) * kSineInvScale * amplitude_;
-    return -1.0f + envelope * (tone + 1.0f);
+    // envelope so the edges stay soft: x = -1 at envelope 0, x = tone at 1.
+    return -1.0f + envelope * (NextSine() + 1.0f);
   }
 
   // Tone keying (default): the carrier stays put at x = 0 and only the tone
@@ -89,10 +86,7 @@ float ToneGenerator::Next() {
     phase_ = 0;
     return 0.0f;
   }
-
-  const int16_t sample = sine_table_[phase_ >> (32 - 8)];
-  phase_ += hardware_config::kTonePhaseIncrement;
-  return static_cast<float>(sample) * kSineInvScale * amplitude_ * envelope;
+  return NextSine() * envelope;
 }
 
 }  // namespace transmitter_system

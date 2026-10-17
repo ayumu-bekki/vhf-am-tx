@@ -4,20 +4,20 @@
 // (C)2025 bekki.jp
 
 // Include ----------------------
-#include <chrono>
-#include <string>
-#include <vector>
+#include <esp_timer.h>
 
-#include <esp_err.h>
+#include <cstdint>
 
 namespace transmitter_system {
 namespace util {
 
-/// Sleep
+/// Blocks the calling task for at least `sleep_milliseconds` (rounded to the
+/// FreeRTOS tick).
 void SleepMillisecond(const uint32_t sleep_milliseconds);
 
-/// Split Text
-std::vector<std::string> SplitString(const std::string& str, const char delim);
+/// Milliseconds since boot (esp_timer). Inline so the host tests, which
+/// fake esp_timer_get_time(), do not need util.cc.
+inline int64_t NowMs() { return esp_timer_get_time() / 1000; }
 
 /// Initialize NVS flash (call once at startup)
 bool InitializeNvs();

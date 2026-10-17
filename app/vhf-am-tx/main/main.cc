@@ -6,5 +6,8 @@
 
 /// Entry Point
 extern "C" void app_main() {
-  std::make_shared<transmitter_system::TransmitterSystem>()->Start();
+  // Static storage: the system owns several kilobytes of tables and buffers,
+  // and Start() never returns, so it lives for the life of the program.
+  static transmitter_system::TransmitterSystem system;
+  system.Start();
 }

@@ -1,11 +1,13 @@
+// ESP32 144MHz AM Transmitter
+// (C)2025 bekki.jp
+// Si5351A clock generator (carrier source, CLK0)
+
 #include "si5351a.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <rom/ets_sys.h>
 
 #include <cmath>
-#include <memory>
 
 #include "hardware_config.h"
 #include "i2c_util.h"
@@ -35,6 +37,7 @@ Si5351A::~Si5351A() {
 }
 
 bool Si5351A::Setup(const uint8_t address) {
+  std::lock_guard<std::mutex> lock(mutex_);
   i2c_address_ = address;
 
   // Get the I2C bus handle
@@ -87,6 +90,7 @@ bool Si5351A::Setup(const uint8_t address) {
 }
 
 bool Si5351A::CarrierEnable() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!dev_handle_ || !frequency_set_) {
     ESP_LOGE(kTag, "CarrierEnable before frequency was programmed");
     return false;
@@ -121,6 +125,7 @@ bool Si5351A::CarrierEnable() {
 }
 
 bool Si5351A::CarrierDisable() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!dev_handle_) {
     return false;
   }
@@ -149,9 +154,10 @@ bool Si5351A::SetFrequency(const Clk clk, const uint32_t freq) {
   // Nothing on the bus: fail quietly. Setup() already reported the absence
   // once, and the UI retunes on a timer, so logging per register write would
   // bury every other message.
-  if (!dev_handle_) {
+  if (!dev_handle_ || freq == 0) {
     return false;
   }
+  std::lock_guard<std::mutex> lock(mutex_);
 
   const uint32_t denom = kPllDenom;
 
@@ -185,9 +191,15 @@ bool Si5351A::SetFrequency(const Clk clk, const uint32_t freq) {
 
   for (uint32_t div = kMultiSynthDivMin; div <= kMultiSynthDivMax;
        div += step) {
-    const uint32_t pll_freq = div * target_freq;
+    // 64-bit: div * target_freq overflows 32 bits long before div reaches
+    // its maximum, and a wrapped product could land inside the PLL range.
+    const uint64_t pll_freq64 = static_cast<uint64_t>(div) * target_freq;
+    if (pll_freq64 > kPllFreqMax) {
+      break;  // only grows from here
+    }
+    const uint32_t pll_freq = static_cast<uint32_t>(pll_freq64);
 
-    if (pll_freq >= kPllFreqMin && pll_freq <= kPllFreqMax) {
+    if (pll_freq >= kPllFreqMin) {
       const uint32_t actual_freq = pll_freq / div / rdiv;
       const uint32_t error =
           (actual_freq > freq) ? (actual_freq - freq) : (freq - actual_freq);
@@ -230,26 +242,25 @@ bool Si5351A::SetFrequency(const Clk clk, const uint32_t freq) {
 
   // 対象Clk出力を無効化
   clk_output_status_ |= (1 << static_cast<uint8_t>(clk));
-  Write(kRegOutputCtrl, clk_output_status_);
+  bool ok = Write(kRegOutputCtrl, clk_output_status_);
 
   // Clkをパワーダウン
-  Write(reg_clk_ctrl, kClkPowerDown);
+  ok &= Write(reg_clk_ctrl, kClkPowerDown);
 
   // PLL周波数を設定
-  SetPLL(reg_pll, pll_mult, pll_num, denom);
+  ok &= SetPLL(reg_pll, pll_mult, pll_num, denom);
 
   // Yield to let IDLE task feed WDT between bulk register writes
   taskYIELD();
 
   // MultiSynth分周器とR分周器を設定
-  SetMultiSynth(reg_multisynth, multisynth_div, rdiv_bits);
+  ok &= SetMultiSynth(reg_multisynth, multisynth_div, rdiv_bits);
 
   // Clkをパワーアップ (駆動電流: 2mA)
-  const bool ok = Write(reg_clk_ctrl, kClkPower2mA);
+  ok &= Write(reg_clk_ctrl, kClkPower2mA);
 
-  // The output stays disabled on purpose. Retuning while transmitting would
-  // otherwise drop the carrier for the duration of the register writes, so
-  // the transmit sequence (spec 8.2) decides when it comes up.
+  // The output is left disabled: the transmit sequence (spec 8.2) decides
+  // when the carrier comes up, via CarrierEnable().
   carrier_clk_ = clk;
   current_freq_hz_ = freq;
   frequency_set_ = ok;
@@ -280,7 +291,7 @@ bool Si5351A::Write(const uint8_t reg, const uint8_t value) {
 // PLL分数分周器の設定
 // PLL出力周波数 = 水晶周波数 × (mult + num/denom)
 // 分数分周パラメータをSi5351Aレジスタ形式(P1, P2, P3)に変換して設定
-void Si5351A::SetPLL(const uint8_t pll, const uint8_t mult, const uint32_t num,
+bool Si5351A::SetPLL(const uint8_t pll, const uint8_t mult, const uint32_t num,
                      const uint32_t denom) {
   ESP_LOGD(kTag, "SetPLL: mult=%u, num=%u, denom=%u (%.6f MHz)", mult, num,
            denom, kXtalFreq * (mult + (double)num / denom) / 1e6);
@@ -295,20 +306,22 @@ void Si5351A::SetPLL(const uint8_t pll, const uint8_t mult, const uint32_t num,
   ESP_LOGD(kTag, "PLL Registers: P1=%u, P2=%u, P3=%u", P1, P2, P3);
 
   // レジスタに書き込み
-  Write(pll + 0, (P3 & 0x0000ff00) >> 8);
-  Write(pll + 1, (P3 & 0x000000ff));
-  Write(pll + 2, (P1 & 0x00030000) >> 16);
-  Write(pll + 3, (P1 & 0x0000ff00) >> 8);
-  Write(pll + 4, (P1 & 0x000000ff));
-  Write(pll + 5, ((P3 & 0x000f0000) >> 12) | ((P2 & 0x000f0000) >> 16));
-  Write(pll + 6, (P2 & 0x0000ff00) >> 8);
-  Write(pll + 7, (P2 & 0x000000ff));
+  bool ok = true;
+  ok &= Write(pll + 0, (P3 & 0x0000ff00) >> 8);
+  ok &= Write(pll + 1, (P3 & 0x000000ff));
+  ok &= Write(pll + 2, (P1 & 0x00030000) >> 16);
+  ok &= Write(pll + 3, (P1 & 0x0000ff00) >> 8);
+  ok &= Write(pll + 4, (P1 & 0x000000ff));
+  ok &= Write(pll + 5, ((P3 & 0x000f0000) >> 12) | ((P2 & 0x000f0000) >> 16));
+  ok &= Write(pll + 6, (P2 & 0x0000ff00) >> 8);
+  ok &= Write(pll + 7, (P2 & 0x000000ff));
+  return ok;
 }
 
 // MultiSynth分周器の設定
 // 整数分周モード(P2=0, P3=1)で設定
 // 最終出力周波数 = PLL周波数 ÷ div ÷ R分周器
-void Si5351A::SetMultiSynth(const uint8_t synth, const uint32_t div,
+bool Si5351A::SetMultiSynth(const uint8_t synth, const uint32_t div,
                             const uint8_t rdiv_bits) {
   ESP_LOGD(kTag, "SetMultiSynth: div=%u, rdiv_bits=%u", div, rdiv_bits);
 
@@ -332,17 +345,21 @@ void Si5351A::SetMultiSynth(const uint8_t synth, const uint32_t div,
            divby4_bits);
 
   // レジスタに書き込み
-  Write(synth + 0, (P3 & 0x0000ff00) >> 8);
-  Write(synth + 1, (P3 & 0x000000ff));
+  bool ok = true;
+  ok &= Write(synth + 0, (P3 & 0x0000ff00) >> 8);
+  ok &= Write(synth + 1, (P3 & 0x000000ff));
   // synth + 2 レジスタには R分周器(bit 6-4)、DIVBY4(bit
   // 3-2)、P1の上位ビット(bit 1-0)が含まれる
-  Write(synth + 2,
-        ((rdiv_bits & 0x07) << 4) | divby4_bits | ((P1 & 0x00030000) >> 16));
-  Write(synth + 3, (P1 & 0x0000ff00) >> 8);
-  Write(synth + 4, (P1 & 0x000000ff));
-  Write(synth + 5, ((P3 & 0x000f0000) >> 12) | ((P2 & 0x000f0000) >> 16));
-  Write(synth + 6, (P2 & 0x0000ff00) >> 8);
-  Write(synth + 7, (P2 & 0x000000ff));
+  ok &= Write(synth + 2, ((rdiv_bits & 0x07) << 4) | divby4_bits |
+                             ((P1 & 0x00030000) >> 16));
+  ok &= Write(synth + 3, (P1 & 0x0000ff00) >> 8);
+  ok &= Write(synth + 4, (P1 & 0x000000ff));
+  ok &= Write(synth + 5, ((P3 & 0x000f0000) >> 12) | ((P2 & 0x000f0000) >> 16));
+  ok &= Write(synth + 6, (P2 & 0x0000ff00) >> 8);
+  ok &= Write(synth + 7, (P2 & 0x000000ff));
+  return ok;
 }
 
 }  // namespace transmitter_system
+
+// EOF

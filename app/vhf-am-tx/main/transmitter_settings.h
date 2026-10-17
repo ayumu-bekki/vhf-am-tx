@@ -10,7 +10,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <memory>
 #include <mutex>
 
 #include "hardware_config.h"
@@ -55,13 +54,16 @@ class TransmitterSettings final {
 
   // --- accessors; setters mark dirty and restart the hold-off --------------
 
-
   uint32_t GetFrequencyHz() const { return frequency_hz_; }
   void SetFrequencyHz(uint32_t hz);
 
-  /// Callsign, always 6 characters plus NUL (spec 9.4.4).
+  /// Callsign: kCallLength (6) characters of A-Z / 0-9 (spec 9.4.4), or an
+  /// empty string while none has been saved. SetCallsign() rejects anything
+  /// that is not a complete callsign.
   const char* GetCallsign() const { return callsign_; }
+  bool HasCallsign() const { return callsign_[0] != '\0'; }
   void SetCallsign(const char* callsign);
+  static bool IsValidCallsign(const char* callsign);
 
   morse::ArdfId GetArdfId() const { return ardf_id_; }
   void SetArdfId(morse::ArdfId id);
@@ -110,9 +112,6 @@ class TransmitterSettings final {
   // voltage on the drain. Erased at start-up.
   static constexpr const char* kKeyLegacyDutyCarrier = "duty_car";
 };
-
-using TransmitterSettingsSharedPtr = std::shared_ptr<TransmitterSettings>;
-using TransmitterSettingsWeakPtr = std::weak_ptr<TransmitterSettings>;
 
 }  // namespace transmitter_system
 

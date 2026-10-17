@@ -2,4 +2,3 @@ build/
 sdkconfig
 sdkconfig.old
 .cache/
-main/version.h

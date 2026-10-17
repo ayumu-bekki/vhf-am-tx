@@ -13,6 +13,9 @@
 
 #include "esp_err.h"
 
+#define ESP_ERR_NVS_NOT_FOUND 0x1102
+#define ESP_ERR_NVS_INVALID_LENGTH 0x110c
+
 typedef uint32_t nvs_handle_t;
 enum nvs_open_mode_t { NVS_READONLY, NVS_READWRITE };
 
@@ -51,7 +54,16 @@ inline esp_err_t nvs_erase_key(nvs_handle_t, const char* k) {
   std::lock_guard<std::mutex> l(g_nvs.m);
   return g_nvs.kv.erase(k) ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
-inline esp_err_t nvs_get_u8(nvs_handle_t, const char*, uint8_t*) { return ESP_ERR_NOT_FOUND; }
-inline esp_err_t nvs_get_u32(nvs_handle_t, const char*, uint32_t*) { return ESP_ERR_NOT_FOUND; }
-inline esp_err_t nvs_get_str(nvs_handle_t, const char*, char*, size_t*) { return ESP_ERR_NOT_FOUND; }
+inline esp_err_t nvs_get_u8(nvs_handle_t, const char*, uint8_t*) { return ESP_ERR_NVS_NOT_FOUND; }
+inline esp_err_t nvs_get_u32(nvs_handle_t, const char*, uint32_t*) { return ESP_ERR_NVS_NOT_FOUND; }
+// Strings are read back, so the callsign load path can be exercised.
+inline esp_err_t nvs_get_str(nvs_handle_t, const char* k, char* out, size_t* len) {
+  std::lock_guard<std::mutex> l(g_nvs.m);
+  auto it = g_nvs.kv.find(k);
+  if (it == g_nvs.kv.end()) return ESP_ERR_NVS_NOT_FOUND;
+  if (it->second.size() + 1 > *len) return ESP_ERR_NVS_INVALID_LENGTH;
+  std::memcpy(out, it->second.c_str(), it->second.size() + 1);
+  *len = it->second.size() + 1;
+  return ESP_OK;
+}
 #endif

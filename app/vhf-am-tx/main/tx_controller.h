@@ -60,10 +60,12 @@ class TxController {
   }
 
   /// Requests the start sequence (spec 8.2). Returns false if transmission is
-  /// inhibited (low battery) or the controller is faulted.
+  /// inhibited (low battery) or the controller is faulted. While the carrier
+  /// is already up this is a no-op; during kTxStopping the start is queued
+  /// and runs once the stop has completed.
   bool RequestStart();
 
-  /// Requests the stop sequence (spec 8.3).
+  /// Requests the stop sequence (spec 8.3). Also cancels a queued start.
   void RequestStop();
 
   /// Key down / key up once in kTxReady or kTxKeyed.
@@ -86,7 +88,9 @@ class TxController {
 
   /// Which source the modulator should read while keyed. Set by the UI when
   /// the mode changes.
-  void SetKeyedSource(ModulationSource source) { keyed_source_ = source; }
+  void SetKeyedSource(ModulationSource source) {
+    keyed_source_.store(source, std::memory_order_release);
+  }
 
  private:
   void TransitionTo(TxState state);
@@ -102,7 +106,7 @@ class TxController {
   std::atomic<bool> stop_request_;
   std::atomic<bool> keyed_request_;
 
-  ModulationSource keyed_source_;
+  std::atomic<ModulationSource> keyed_source_;
 
   /// Timestamp the current phase started, for the settle delays.
   int64_t phase_start_ms_;

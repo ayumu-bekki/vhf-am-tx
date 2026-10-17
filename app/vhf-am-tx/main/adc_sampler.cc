@@ -56,9 +56,11 @@ AdcSampler::AdcSampler()
       clipping_(false),
       battery_count_(0),
       battery_sum_(0),
+      battery_raw_mean_(0),
+      battery_seq_(0),
+      battery_seq_seen_(0),
       battery_voltage_(0.0f),
       battery_average_(0.0f),
-      battery_minimum_(99.0f),
       battery_history_{},
       battery_history_index_(0),
       battery_history_filled_(false),
@@ -252,15 +254,25 @@ void AdcSampler::AccumulateBatterySample(uint32_t raw) {
     return;
   }
 
-  const uint32_t mean =
-      static_cast<uint32_t>(battery_sum_ / battery_count_);
+  battery_raw_mean_.store(static_cast<uint32_t>(battery_sum_ / battery_count_),
+                          std::memory_order_relaxed);
+  battery_seq_.fetch_add(1, std::memory_order_release);
   battery_sum_ = 0;
   battery_count_ = 0;
+}
+
+void AdcSampler::UpdateBattery() {
+  const uint32_t seq = battery_seq_.load(std::memory_order_acquire);
+  if (seq == battery_seq_seen_) {
+    return;
+  }
+  battery_seq_seen_ = seq;
+  const uint32_t mean = battery_raw_mean_.load(std::memory_order_relaxed);
 
   int millivolts = 0;
-  if (calibrated_) {
-    adc_cali_raw_to_voltage(cali_handle_, static_cast<int>(mean), &millivolts);
-  } else {
+  if (!calibrated_ ||
+      adc_cali_raw_to_voltage(cali_handle_, static_cast<int>(mean),
+                              &millivolts) != ESP_OK) {
     millivolts = static_cast<int>(mean) * kFallbackFullScaleMv / kAdcMaxRaw;
   }
 
@@ -268,11 +280,6 @@ void AdcSampler::AccumulateBatterySample(uint32_t raw) {
       (static_cast<float>(millivolts) / 1000.0f) * hardware_config::kBatDivRatio;
 
   battery_voltage_.store(volts, std::memory_order_relaxed);
-
-  // Track the minimum for the rail droop check (spec 3.6).
-  if (volts < battery_minimum_.load(std::memory_order_relaxed)) {
-    battery_minimum_.store(volts, std::memory_order_relaxed);
-  }
 
   // One second moving average over the 10Hz samples. This, not the
   // instantaneous value, is what gates transmission.
@@ -286,14 +293,12 @@ void AdcSampler::AccumulateBatterySample(uint32_t raw) {
   const uint32_t samples = battery_history_filled_
                                ? hardware_config::kBatInhibitAvgCount
                                : battery_history_index_;
-  if (samples > 0) {
-    float sum = 0.0f;
-    for (uint32_t i = 0; i < samples; ++i) {
-      sum += battery_history_[i];
-    }
-    battery_average_.store(sum / static_cast<float>(samples),
-                           std::memory_order_relaxed);
+  float sum = 0.0f;
+  for (uint32_t i = 0; i < samples; ++i) {
+    sum += battery_history_[i];
   }
+  battery_average_.store(sum / static_cast<float>(samples),
+                         std::memory_order_relaxed);
 }
 
 float AdcSampler::ReadMicrophone() {

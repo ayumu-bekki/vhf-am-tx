@@ -1,6 +1,6 @@
 // ESP32 144MHz AM Transmitter
 // (C)2025 bekki.jp
-// Utilities
+// Shared I2C master bus (Si5351A + ST7032)
 
 // Include ----------------------
 #include "i2c_util.h"

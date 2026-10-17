@@ -2,7 +2,7 @@
 #define AM_TRANSMITTER_MAIN_I2C_UTIL_H_
 // ESP32 144MHz AM Transmitter
 // (C)2025 bekki.jp
-// Utilities
+// Shared I2C master bus (Si5351A + ST7032)
 
 // Include ----------------------
 #include <driver/gpio.h>

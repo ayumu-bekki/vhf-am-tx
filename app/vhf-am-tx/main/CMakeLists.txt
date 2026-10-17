@@ -22,4 +22,14 @@ idf_component_register(SRCS "main.cc"
                     PRIV_REQUIRES driver esp_adc esp_driver_gpio esp_driver_ledc esp_driver_gptimer
                                   esp_driver_i2c nvs_flash esp_timer esp_hal_ledc)
 
-component_compile_options(-Wno-error=format= -Wno-format)
+# Git version -> version.h, generated into the build tree (not the source
+# tree) so a stale copy can never be picked up. Skipped during the
+# requirements expansion pass, where no build directory exists yet.
+if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    execute_process(COMMAND git describe --dirty --always --tags
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    OUTPUT_VARIABLE GIT_VERSION
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    configure_file(version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
+    target_include_directories(${COMPONENT_LIB} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+endif()

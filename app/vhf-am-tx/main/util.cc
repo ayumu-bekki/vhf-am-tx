@@ -8,29 +8,13 @@
 #include <freertos/task.h>
 #include <nvs_flash.h>
 
-#include <sstream>
-
 #include "logger.h"
 
 namespace transmitter_system {
 namespace util {
 
-/// Sleep
 void SleepMillisecond(const uint32_t sleep_milliseconds) {
-  TickType_t last_wake_time = xTaskGetTickCount();
-  vTaskDelayUntil(&last_wake_time, sleep_milliseconds / portTICK_PERIOD_MS);
-}
-
-std::vector<std::string> SplitString(const std::string& str, const char delim) {
-  std::vector<std::string> elements;
-  std::stringstream ss(str);
-  std::string item;
-  while (getline(ss, item, delim)) {
-    if (!item.empty()) {
-      elements.push_back(item);
-    }
-  }
-  return elements;
+  vTaskDelay(pdMS_TO_TICKS(sleep_milliseconds));
 }
 
 bool InitializeNvs() {

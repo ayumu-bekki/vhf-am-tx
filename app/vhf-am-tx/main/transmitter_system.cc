@@ -5,7 +5,8 @@
 
 #include <driver/gpio.h>
 #include <esp_task_wdt.h>
-#include <esp_timer.h>
+
+#include <cstring>
 
 #include "hardware_config.h"
 #include "i2c_util.h"
@@ -35,12 +36,12 @@ const gpio_num_t kUnusedGpioPins[] = {
     xiao_esp32c6_pin::kWifiAntConfig,  // GPIO14
 };
 
-int64_t NowMs() { return esp_timer_get_time() / 1000; }
-
 }  // namespace
 
-TransmitterSystem::TransmitterSystem() = default;
-TransmitterSystem::~TransmitterSystem() = default;
+using util::NowMs;
+
+TransmitterSystem::TransmitterSystem()
+    : ui_task_(lcd_, settings_, tx_, ardf_, modulator_, si5351a_) {}
 
 float TransmitterSystem::CwKeyerSample(void* context) {
   return static_cast<CwKeyer*>(context)->Tick();
@@ -60,6 +61,23 @@ float TransmitterSystem::ToneSample(void* context) {
 void TransmitterSystem::SetStatusLed(bool on) {
   const bool level = hardware_config::kStatusLedActiveLow ? !on : on;
   gpio_set_level(hardware_config::kStatusLedPin, level ? 1 : 0);
+  status_led_on_ = on;
+}
+
+void TransmitterSystem::UpdateStatusLed(int64_t now_ms) {
+  bool on = false;
+  if (tx_.IsTransmitting()) {
+    // Carrier up: solid. This wins over the LCD fault blink - whether the
+    // set is radiating is the one thing the operator must always be able
+    // to see.
+    on = true;
+  } else if (!lcd_ok_) {
+    // The LCD is down: blink the board LED hard so the fault is noticed.
+    on = (now_ms / hardware_config::kStatusLedBlinkMs) % 2 == 0;
+  }
+  if (on != status_led_on_) {
+    SetStatusLed(on);
+  }
 }
 
 void TransmitterSystem::ConfigureStatusLed() {
@@ -69,10 +87,27 @@ void TransmitterSystem::ConfigureStatusLed() {
 }
 
 void TransmitterSystem::ConfigureUnusedGpio() {
-  for (const auto& gpio_num : kUnusedGpioPins) {
+  for (const gpio_num_t gpio_num : kUnusedGpioPins) {
     gpio_set_direction(gpio_num, GPIO_MODE_INPUT);
     gpio_set_pull_mode(gpio_num, GPIO_PULLDOWN_ONLY);
   }
+}
+
+void TransmitterSystem::StartButtons() {
+  MessageQueue<ButtonEvent>* const queue = ui_task_.GetButtonEventQueue();
+
+  // SW_MODE is single shot; FN+/FN- auto-repeat (spec 9.7).
+  using Button = GpioInputWatchTask::Button;
+  gpio_watch_task_.AddButton(Button(hardware_config::kSwModePin,
+                                    ButtonEvent::Button::kMode, queue,
+                                    /*allow_repeat=*/false));
+  gpio_watch_task_.AddButton(Button(hardware_config::kSwFnPlusPin,
+                                    ButtonEvent::Button::kFnPlus, queue,
+                                    /*allow_repeat=*/true));
+  gpio_watch_task_.AddButton(Button(hardware_config::kSwFnMinusPin,
+                                    ButtonEvent::Button::kFnMinus, queue,
+                                    /*allow_repeat=*/true));
+  gpio_watch_task_.Start();
 }
 
 bool TransmitterSystem::InitializeHardware() {
@@ -102,10 +137,10 @@ bool TransmitterSystem::InitializeHardware() {
     lcd_.Clear();
     // Same text the UI shows next, so the title is on screen from the moment
     // the display is up, not only once the UI task starts.
-    lcd_.SetCursor(0, 0);
-    lcd_.Print(hardware_config::kBootTitle);
-    lcd_.SetCursor(0, 1);
-    lcd_.Print(settings_.GetCallsign());
+    lcd_.WriteAt(0, 0, hardware_config::kBootTitle,
+                 std::strlen(hardware_config::kBootTitle));
+    lcd_.WriteAt(0, 1, settings_.GetCallsign(),
+                 std::strlen(settings_.GetCallsign()));  // blank if unset
   }
 
   // A missing synthesiser must not stop the modulator from coming up.
@@ -171,8 +206,8 @@ bool TransmitterSystem::InitializeHardware() {
 void TransmitterSystem::Start() {
   logger::InitializeLogLevel();
 
-  ESP_LOGI(kTag, "Startup 144MHz AM Transmitter. Version:%s",
-           std::string(kGitVersion).c_str());
+  ESP_LOGI(kTag, "Startup 144MHz AM Transmitter. Version:%.*s",
+           static_cast<int>(kGitVersion.size()), kGitVersion.data());
 
   ConfigureUnusedGpio();
   ConfigureStatusLed();
@@ -183,25 +218,8 @@ void TransmitterSystem::Start() {
     tx_.EnterFault("modulator initialisation failed");
   }
 
-  ui_task_ = std::make_unique<UiControllerTask>(&lcd_, &settings_, &tx_, &ardf_,
-                                                &modulator_, &si5351a_,
-                                                &voice_);
-
-  MessageQueue<ButtonEvent>* button_queue = ui_task_->GetButtonEventQueue();
-
-  // SW_MODE is single shot; FN+/FN- auto-repeat (spec 9.7).
-  gpio_watch_task_.AddMonitor(GpioInputWatchTask::GpioInfo(
-      hardware_config::kSwModePin, ButtonEvent::Button::kMode, button_queue,
-      /*allow_repeat=*/false));
-  gpio_watch_task_.AddMonitor(GpioInputWatchTask::GpioInfo(
-      hardware_config::kSwFnPlusPin, ButtonEvent::Button::kFnPlus,
-      button_queue, /*allow_repeat=*/true));
-  gpio_watch_task_.AddMonitor(GpioInputWatchTask::GpioInfo(
-      hardware_config::kSwFnMinusPin, ButtonEvent::Button::kFnMinus,
-      button_queue, /*allow_repeat=*/true));
-
-  gpio_watch_task_.Start();
-  ui_task_->Start();
+  StartButtons();
+  ui_task_.Start();
 
   ESP_LOGI(kTag, "AM Transmitter initialized");
 
@@ -227,14 +245,13 @@ void TransmitterSystem::RunMainLoop() {
     // second average, never the instantaneous reading, or every key down
     // would trip it as the pack sags under the 1.05A peak.
     if (adc_.IsReady()) {
+      adc_.UpdateBattery();
       const float average = adc_.GetBatteryAverageVoltage();
       if (average > 0.0f) {
         tx_.SetInhibited(hardware_config::kBatInhibitEnabled &&
                          average < hardware_config::kBatInhibitV);
       }
-      if (ui_task_) {
-        ui_task_->SetBatteryVoltage(adc_.GetBatteryVoltage());
-      }
+      ui_task_.SetBatteryVoltage(adc_.GetBatteryVoltage());
     }
 
     // Watch the 25kHz tick itself. The Si5351A module has no OEB pin, so a
@@ -252,12 +269,9 @@ void TransmitterSystem::RunMainLoop() {
       last_tick_check_ms = now;
     }
 
-    // The LCD is down: blink the board LED hard so the fault is noticed.
-    if (!lcd_ok_) {
-      SetStatusLed((now / hardware_config::kStatusLedBlinkMs) % 2 == 0);
-    }
+    UpdateStatusLed(now);
 
-    util::SleepMillisecond(10);
+    util::SleepMillisecond(hardware_config::kMainLoopIntervalMs);
   }
 }
 

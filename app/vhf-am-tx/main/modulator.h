@@ -13,7 +13,6 @@
 
 #include "gptimer.h"
 #include "hardware_config.h"
-#include "modulation_map.h"
 
 namespace transmitter_system {
 
@@ -41,11 +40,9 @@ enum class ModulationSource : uint8_t {
 /// is over the 20us guideline but inside the 40us period, and was accepted
 /// as-is (spec 7.4). Watch `max_us` here if voice quality ever looks wrong.
 struct IsrStats {
-  uint32_t max_us;
-  uint32_t avg_us;
+  uint32_t max_us;  // worst case since boot
+  uint32_t avg_us;  // average over the last ~40ms
   uint32_t tick_count;
-  uint32_t ring_underrun;
-  uint32_t ring_overrun;
 };
 
 /// Owns the LEDC channel and the 25kHz master tick.
@@ -99,12 +96,9 @@ class Modulator {
   void SetFixedDuty(uint32_t duty);
 
   /// Carrier level for the silent source (D:CARR): 1.0 is the full carrier
-  /// duty, 0.5 is half of it, 1.8 the D:CARR peak. Goes through the same ramp and the same duty
-  /// ceiling as everything else. Clamped to 0..2 (above 1 only for the D:CARR peak level).
+  /// duty, 0.5 is half of it, 1.8 the D:CARR peak. Goes through the same ramp
+  /// and the same duty ceiling as everything else. Clamped to 0..2.
   void SetCarrierLevel(float level);
-  uint32_t GetFixedDuty() const {
-    return fixed_duty_.load(std::memory_order_relaxed);
-  }
 
   /// Gates the output. When false the duty is forced to 0 regardless of x,
   /// which is how key-up and transmit-stop are expressed (spec 6.3).
@@ -130,16 +124,11 @@ class Modulator {
   }
 
   IsrStats GetStats() const;
-  void ResetStats();
 
-  /// Converts x to a duty register value (spec 6.2). Exposed for tests and
-  /// for the display; the ISR uses the same path, hence IRAM.
-  static uint32_t IRAM_ATTR XToDuty(float x, float* dither_state);
-
+ private:
   /// Builds the raised-cosine ramp table. Called from Initialize().
   void BuildRampTable();
 
- private:
   static bool IRAM_ATTR TimerCallback(gptimer_handle_t timer,
                                       const gptimer_alarm_event_data_t* data,
                                       void* user_data);

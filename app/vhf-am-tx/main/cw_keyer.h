@@ -42,7 +42,8 @@ class CwKeyer {
   /// picked up on the next tick.
   void Send(const char* text);
 
-  /// Stops immediately and releases the key.
+  /// Stops at the next tick and releases the key (the envelope still decays
+  /// over 5ms). Cancels a Send() that has not started yet.
   void Stop();
 
   /// True while there is still something to send (including trailing gaps).
@@ -61,9 +62,10 @@ class CwKeyer {
     kTailGap,      // let the envelope decay after the last element
   };
 
+  void IRAM_ATTR ResetSequence();
   void IRAM_ATTR StartNextElement();
   void IRAM_ATTR AdvanceCharacter();
-  uint32_t SamplesForUnits(uint32_t units) const;
+  uint32_t IRAM_ATTR SamplesForUnits(uint32_t units) const;
 
  private:
   ToneGenerator* tone_;

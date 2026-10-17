@@ -10,12 +10,9 @@
 // one is end-of-life in ESP-IDF v6.0 and cannot share a bus with the new one.
 
 #include <driver/i2c_master.h>
-#include <esp_log.h>
 
-#include <cstdarg>
-#include <cstring>
-#include <memory>
-#include <string>
+#include <cstddef>
+#include <cstdint>
 
 namespace transmitter_system {
 
@@ -86,9 +83,15 @@ class ST7032 {
   static constexpr uint8_t kLcdRab3_00 = 0x06;
   static constexpr uint8_t kLcdRab3_75 = 0x07;
 
-  // Control bytes prefixed to every transfer
-  static constexpr uint8_t kControlCommand = 0x00;
-  static constexpr uint8_t kControlData = 0x40;
+  // Control byte: bit 7 Co (1 = another control byte follows the next data
+  // byte, 0 = everything after this is data), bit 6 RS (0 = instruction,
+  // 1 = DDRAM data).
+  static constexpr uint8_t kControlCommand = 0x00;        // Co=0, RS=0
+  static constexpr uint8_t kControlCommandChain = 0x80;   // Co=1, RS=0
+  static constexpr uint8_t kControlData = 0x40;           // Co=0, RS=1
+
+  // Longest row any ST7032 module has; bounds the transfer buffer.
+  static constexpr uint8_t kMaxColumns = 40;
 
  public:
   ST7032();
@@ -103,18 +106,16 @@ class ST7032 {
   void SetContrast(uint8_t contrast);
   void Clear();
   void SetCursor(uint8_t col, uint8_t row);
-  void Print(const std::string& s);
-  void Print(const char str[]);
-  void Printf(const char* format, ...);
-  void Vprintf(const char* format, va_list arg);
+
+  /// Writes `len` characters starting at (col, row) in a single I2C
+  /// transaction: the DDRAM address and the data travel together, chained
+  /// with the Co bit. Text past the end of the row is dropped. Returns false
+  /// if the transfer failed.
+  bool WriteAt(uint8_t col, uint8_t row, const char* text, size_t len);
 
   /// Hardware cursor, used by the callsign editor (spec 9.4.4) to show which
   /// character is being edited.
   void SetCursorVisible(bool cursor_on, bool blink_on);
-
-  void Write(const uint8_t* buffer, size_t size);
-  void Write(const uint8_t value);
-  void Command(const uint8_t value);
 
   bool IsReady() const { return dev_handle_ != nullptr; }
 
@@ -123,7 +124,9 @@ class ST7032 {
   void SetEntryMode(uint8_t set_bit);
   void NormalFunctionSet();
   void ExtendFunctionSet();
-  void Transmit(const uint8_t control, const uint8_t value);
+  void Command(const uint8_t value);
+  uint8_t DdramAddress(uint8_t col, uint8_t row) const;
+  bool Transmit(const uint8_t* buffer, size_t size);
 
  private:
   i2c_master_dev_handle_t dev_handle_;
@@ -136,10 +139,6 @@ class ST7032 {
   uint8_t num_lines_;
   uint8_t num_cols_;
 };
-
-using ST7032UniquePtr = std::unique_ptr<ST7032>;
-using ST7032SharedPtr = std::shared_ptr<ST7032>;
-using ST7032WeakPtr = std::weak_ptr<ST7032>;
 
 }  // namespace transmitter_system
 

@@ -4,17 +4,14 @@
 
 #include "transmitter_settings.h"
 
-#include <esp_timer.h>
-
 #include <cstring>
 
 #include "logger.h"
+#include "util.h"
 
 namespace transmitter_system {
 
-namespace {
-int64_t NowMs() { return esp_timer_get_time() / 1000; }
-}  // namespace
+using util::NowMs;
 
 TransmitterSettings::TransmitterSettings()
     : nvs_handle_(0),
@@ -26,12 +23,9 @@ TransmitterSettings::TransmitterSettings()
       writer_exited_(false),
       writer_task_(nullptr),
       frequency_hz_(hardware_config::kFreqDefaultHz),
-      callsign_{},
+      callsign_{},  // unset until loaded or entered
       ardf_id_(static_cast<morse::ArdfId>(hardware_config::kArdfIdDefault)),
-      cw_wpm_(hardware_config::kCwWpmDefault) {
-  std::strncpy(callsign_, hardware_config::kCallDefault, sizeof(callsign_) - 1);
-  callsign_[sizeof(callsign_) - 1] = '\0';
-}
+      cw_wpm_(hardware_config::kCwWpmDefault) {}
 
 TransmitterSettings::~TransmitterSettings() {
   if (writer_task_) {
@@ -73,7 +67,7 @@ bool TransmitterSettings::Load() {
   nvs_handle_t read_handle;
   esp_err_t err = nvs_open(kNvsNamespace, NVS_READONLY, &read_handle);
   if (err != ESP_OK) {
-    ESP_LOGI(kTag, "No saved settings, using defaults");
+    ESP_LOGI(kTag, "No saved settings, using defaults (callsign unset)");
     OpenNvsHandle();
     return false;
   }
@@ -86,11 +80,22 @@ bool TransmitterSettings::Load() {
   nvs_get_u8(read_handle, kKeyArdfId, &ardf_id);
   nvs_get_u8(read_handle, kKeyCwWpm, &wpm);
 
+  // Say where the callsign came from: a title screen without one is
+  // otherwise indistinguishable from a failed read.
   char call[sizeof(callsign_)] = {};
   size_t call_len = sizeof(call);
-  if (nvs_get_str(read_handle, kKeyCallsign, call, &call_len) == ESP_OK) {
-    std::strncpy(callsign_, call, sizeof(callsign_) - 1);
-    callsign_[sizeof(callsign_) - 1] = '\0';
+  const esp_err_t call_err =
+      nvs_get_str(read_handle, kKeyCallsign, call, &call_len);
+  if (call_err == ESP_OK && IsValidCallsign(call)) {
+    std::memcpy(callsign_, call, sizeof(callsign_));
+    ESP_LOGI(kTag, "Callsign loaded from NVS: %s", callsign_);
+  } else if (call_err == ESP_ERR_NVS_NOT_FOUND) {
+    ESP_LOGI(kTag, "No callsign saved: unset");
+  } else if (call_err == ESP_OK) {
+    ESP_LOGW(kTag, "Saved callsign \"%s\" is invalid: unset", call);
+  } else {
+    ESP_LOGW(kTag, "Reading the callsign failed (%s): unset",
+             esp_err_to_name(call_err));
   }
 
   nvs_close(read_handle);
@@ -227,7 +232,10 @@ bool TransmitterSettings::Commit() {
 
   esp_err_t err = ESP_OK;
   if (err == ESP_OK) err = nvs_set_u32(nvs_handle_, kKeyFrequency, frequency_hz);
-  if (err == ESP_OK) err = nvs_set_str(nvs_handle_, kKeyCallsign, callsign);
+  // An unset callsign is simply not stored.
+  if (err == ESP_OK && callsign[0] != '\0') {
+    err = nvs_set_str(nvs_handle_, kKeyCallsign, callsign);
+  }
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyArdfId, ardf_id);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyCwWpm, cw_wpm);
   if (err == ESP_OK) err = nvs_commit(nvs_handle_);
@@ -257,16 +265,29 @@ void TransmitterSettings::SetFrequencyHz(uint32_t hz) {
   MarkDirty();
 }
 
-void TransmitterSettings::SetCallsign(const char* callsign) {
-  std::lock_guard<std::mutex> lock(mutex_);
+bool TransmitterSettings::IsValidCallsign(const char* callsign) {
   if (!callsign) {
+    return false;
+  }
+  for (uint8_t i = 0; i < hardware_config::kCallLength; ++i) {
+    const char c = callsign[i];
+    if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
+      return false;  // also catches a NUL before the full length
+    }
+  }
+  return callsign[hardware_config::kCallLength] == '\0';
+}
+
+void TransmitterSettings::SetCallsign(const char* callsign) {
+  if (!IsValidCallsign(callsign)) {
+    ESP_LOGW(kTag, "Ignoring invalid callsign");
     return;
   }
-  if (std::strncmp(callsign_, callsign, sizeof(callsign_) - 1) == 0) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (std::memcmp(callsign_, callsign, sizeof(callsign_)) == 0) {
     return;
   }
-  std::strncpy(callsign_, callsign, sizeof(callsign_) - 1);
-  callsign_[sizeof(callsign_) - 1] = '\0';
+  std::memcpy(callsign_, callsign, sizeof(callsign_));
   MarkDirty();
 }
 

@@ -38,8 +38,11 @@ constexpr gpio_num_t kI2cSclPin = xiao_esp32c6_pin::kScl;  // GPIO23 (D5)
 constexpr gpio_num_t kBatteryVoltagePin = xiao_esp32c6_pin::kD0;  // GPIO0
 constexpr gpio_num_t kMicrophonePin = xiao_esp32c6_pin::kD1;      // GPIO1
 
-// Board LED (XIAO ESP32C6 user LED, lit by driving the pin low). It blinks
-// fast when the LCD is down, since then there is nowhere to show the problem.
+// Board LED (XIAO ESP32C6 user LED, lit by driving the pin low).
+//   - solid while the carrier is up (TxController::IsTransmitting());
+//   - otherwise blinks fast when the LCD is down, since then there is nowhere
+//     else to show the problem;
+//   - off otherwise.
 constexpr gpio_num_t kStatusLedPin = xiao_esp32c6_pin::kLedBuiltin;  // GPIO15
 constexpr bool kStatusLedActiveLow = true;
 constexpr uint32_t kStatusLedBlinkMs = 50;  // toggle period -> 10 Hz
@@ -110,22 +113,6 @@ constexpr uint32_t kDutyHardMax = 187;
 // Ceiling actually used by every path. The calibration can only lower it:
 // a modulator with more gain than nominal reaches 7.75V at a smaller duty.
 //   floor(7.75 / 3.6 * 256 * kModKCal) = 181 with kModKCal = 0.3295
-// Set by menuconfig: AM Transmitter -> Enable the debug test modes.
-#ifdef CONFIG_AM_TX_DEBUG_MODES
-constexpr bool kDebugModesEnabled = true;
-#else
-constexpr bool kDebugModesEnabled = false;
-#endif
-
-// D:BRST: a tone burst of kBurstOnMs at the start of every kBurstPeriodMs.
-constexpr int64_t kBurstPeriodMs = 60000;
-constexpr int64_t kBurstOnMs = 5000;
-
-// D:CARR "P" level: carrier duty x 1.8 (84 -> 152), clamped by kDutyLimit.
-// It heats the final stage, so it switches itself off after 3 seconds.
-constexpr float kCarrierPeakFactor = 1.8f;
-constexpr int64_t kCarrierPeakMaxMs = 3000;
-
 constexpr uint32_t kDutyCalMax = static_cast<uint32_t>(
     kVDrainHardLimit / kVDrainCarrier * static_cast<float>(kPwmFullScale) *
     kModKCal);
@@ -151,16 +138,32 @@ static_assert(kModKCal >= kModKCalMin && kModKCal <= kModKCalMax,
               "kModKCal is outside +-5% of nominal");
 
 // ============================================================================
+// Debug test modes (spec 12)
+// ============================================================================
+
+// Set by menuconfig: AM Transmitter -> Enable the debug test modes.
+#ifdef CONFIG_AM_TX_DEBUG_MODES
+constexpr bool kDebugModesEnabled = true;
+#else
+constexpr bool kDebugModesEnabled = false;
+#endif
+
+// D:BRST: a tone burst of kBurstOnMs at the start of every kBurstPeriodMs.
+constexpr int64_t kBurstPeriodMs = 60000;
+constexpr int64_t kBurstOnMs = 5000;
+
+// D:CARR "P" level: carrier duty x 1.8 (84 -> 152), clamped by kDutyLimit.
+// It heats the final stage, so it switches itself off after 3 seconds.
+constexpr float kCarrierPeakFactor = 1.8f;
+constexpr int64_t kCarrierPeakMaxMs = 3000;
+
+// ============================================================================
 // Modulation Input x (spec 2.1, 4.2, 5.1)
 // ============================================================================
 
 // A2A tone amplitude: 80% modulation / 0.877 (M2 loss at 700Hz).
 // CALIBRATE together with the M2 component values.
 constexpr float kXGainA2a = 0.912f;
-
-// A2A soft limits
-constexpr float kXMinA2a = -1.0f;
-constexpr float kXMaxA2a = kXGainA2a;
 
 // A3E asymmetric limiter (spec 4.2 / ADR-017).
 // Negative side stops short of the knee voltage (0.6V); positive side uses
@@ -178,7 +181,8 @@ constexpr float kXAbsMax = 1.143f;  // maps to kDutyHardMax (187)
 // ============================================================================
 
 constexpr uint32_t kToneHz = 700;
-constexpr uint32_t kSineTableSize = 256;
+constexpr uint32_t kSineTableBits = 8;
+constexpr uint32_t kSineTableSize = 1u << kSineTableBits;  // 256
 
 // Phase increment for a 32-bit accumulator: (700 / 25000) * 2^32
 //   700 / 25000 = 0.028 exactly, 0.028 * 2^32 = 120259084.288 -> 0x072B020C
@@ -195,23 +199,10 @@ constexpr float kEnvelopeMs = 5.0f;
 constexpr uint32_t kEnvelopeSamples =
     static_cast<uint32_t>(kEnvelopeMs * kTickHz / 1000.0f);  // 125
 
-// ============================================================================
-// Analog front end constants (spec 1.2)
-// ============================================================================
-
-// M2 output filter and microphone anti-alias filter share 1kohm x 47nF.
-constexpr float kM2Rc = 47e-6f;
-constexpr float kAaRc = 47e-6f;
-
-// EQ pole frequency (spec 4.1).
-// The spec suggests "well above 3kHz, e.g. 8kHz", but 8kHz leaves a 1.10dB
-// error at 3kHz which misses the +-1dB requirement. 10kHz brings the worst
-// case to 0.52dB. See biquad coefficients in voice_dsp.cc.
-constexpr float kEqPoleHz = 10000.0f;
-
-// Band limiting (spec 4.4)
-constexpr float kHpfHz = 300.0f;
-constexpr float kLpfHz = 3000.0f;
+// Voice chain design values (spec 1.2 / 4.1 / 4.4): M2 and the anti-alias
+// filter share 1kohm x 47nF (RC = 47us), the EQ poles sit at 10kHz, and the
+// band is limited to 300Hz-3kHz. The filter coefficients derived from these
+// are hard-coded in voice_dsp.cc; change them there together.
 
 // ============================================================================
 // ADC (spec 3)
@@ -299,8 +290,9 @@ constexpr uint8_t kArdfIdDefault = 0;  // MOE
 // MO continuous mode inserts the callsign every 10 minutes
 constexpr uint32_t kMoCallIntervalS = 600;
 
-// Default callsign. CALIBRATE (operator's own callsign)
-constexpr char kCallDefault[] = "JL1HMT";
+// Callsign length (spec 9.4.4). There is no built-in default: until one is
+// entered in CALL mode and saved to NVS the callsign is unset, the title
+// screen leaves it blank and ARDF refuses to start (spec 10.5 requires it).
 constexpr uint8_t kCallLength = 6;
 
 // ============================================================================
@@ -309,7 +301,6 @@ constexpr uint8_t kCallLength = 6;
 
 constexpr uint32_t kButtonPollIntervalMs = 5;
 constexpr uint32_t kBtnDebounceMs = 20;
-constexpr uint32_t kBtnDebounceCount = kBtnDebounceMs / kButtonPollIntervalMs;
 
 // Auto-repeat applies to FN+/FN- only. SW_MODE is always single shot, and so
 // are the voice PTT and the ARDF run toggle.
@@ -318,9 +309,7 @@ constexpr uint32_t kBtnRepeatSlowHz = 8;
 constexpr uint32_t kBtnRepeatFastAfterMs = 2000;
 constexpr uint32_t kBtnRepeatFastHz = 25;
 
-constexpr int32_t kButtonEventQueueSize = 16;
-constexpr int32_t kGpioMessageQueueSize = 10;
-constexpr uint32_t kGpioTimerResolutionHz = 1000000;
+constexpr uint32_t kButtonEventQueueSize = 16;
 
 // ============================================================================
 // Transmit Sequencing (spec 8.2 / 8.3)
@@ -341,9 +330,11 @@ constexpr uint32_t kPllLockWaitMs = 10;
 // ============================================================================
 
 // The Si5351A module has no OEB pin, so I2C is the only way to stop the
-// carrier: a hung MCU would otherwise transmit forever.
+// carrier: a hung MCU would otherwise transmit forever. The main loop checks
+// that the master tick is still advancing at this interval. The task
+// watchdog timeout itself (3s) is CONFIG_ESP_TASK_WDT_TIMEOUT_S in
+// sdkconfig.defaults.
 constexpr uint32_t kTickWatchIntervalMs = 100;
-constexpr uint32_t kTwdtTimeoutS = 3;
 
 // ============================================================================
 // NVS (spec 9.6)
@@ -376,15 +367,11 @@ constexpr uint32_t kDisplayUpdateIntervalMs = 100;
 constexpr const char* kBootTitle = "AM Transmitter";
 constexpr uint32_t kBootTitleMs = 2000;
 
-// Idle screens alternate between the mode line and the battery line every 5s.
-// Edit modes hold their content instead.
-constexpr uint32_t kDisplayAlternateMs = 5000;
-
 // ============================================================================
-// Main loop
+// Main loop (TX sequencing, ARDF schedule, battery and tick supervision)
 // ============================================================================
 
-constexpr uint32_t kMainLoopSleepMs = 100;
+constexpr uint32_t kMainLoopIntervalMs = 10;
 
 }  // namespace hardware_config
 }  // namespace transmitter_system

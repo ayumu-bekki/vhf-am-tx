@@ -4,14 +4,18 @@
 
 #include "gpio_input_watch_task.h"
 
+#include <freertos/task.h>
+
+#include "hardware_config.h"
+#include "logger.h"
+
 namespace transmitter_system {
 
 namespace {
 
-// Debounce is specified in milliseconds; convert to polling intervals.
-constexpr uint32_t kDebounceTicks = hardware_config::kBtnDebounceCount;
-
-// Auto-repeat staging, all in polling intervals.
+// Debounce and auto-repeat staging, all in polling intervals.
+constexpr uint32_t kDebounceTicks =
+    hardware_config::kBtnDebounceMs / hardware_config::kButtonPollIntervalMs;
 constexpr uint32_t kRepeatDelayTicks =
     hardware_config::kBtnRepeatDelayMs / hardware_config::kButtonPollIntervalMs;
 constexpr uint32_t kRepeatSlowPeriodTicks =
@@ -24,13 +28,14 @@ constexpr uint32_t kRepeatFastPeriodTicks =
     1000u / (hardware_config::kBtnRepeatFastHz *
              hardware_config::kButtonPollIntervalMs);
 
-constexpr int kQueueTimeoutMs = 1000;
+static_assert(pdMS_TO_TICKS(hardware_config::kButtonPollIntervalMs) > 0,
+              "button poll interval is shorter than the FreeRTOS tick");
 
 }  // namespace
 
-void GpioInputWatchTask::GpioInfo::Check() {
+void GpioInputWatchTask::Button::Poll() {
   // Buttons pull to ground, so a low level means pressed.
-  const bool down = (gpio_get_level(gpio_no_) == 0);
+  const bool down = (gpio_get_level(gpio_) == 0);
 
   switch (state_) {
     case State::kIdle:
@@ -57,9 +62,7 @@ void GpioInputWatchTask::GpioInfo::Check() {
 
     case State::kPressed:
       if (!down) {
-        state_ = State::kIdle;
-        counter_ = 0;
-        Emit(ButtonEvent::Type::kRelease);
+        Release();
         break;
       }
       ++hold_ticks_;
@@ -72,9 +75,7 @@ void GpioInputWatchTask::GpioInfo::Check() {
 
     case State::kRepeatSlow:
       if (!down) {
-        state_ = State::kIdle;
-        counter_ = 0;
-        Emit(ButtonEvent::Type::kRelease);
+        Release();
         break;
       }
       ++hold_ticks_;
@@ -90,9 +91,7 @@ void GpioInputWatchTask::GpioInfo::Check() {
 
     case State::kRepeatFast:
       if (!down) {
-        state_ = State::kIdle;
-        counter_ = 0;
-        Emit(ButtonEvent::Type::kRelease);
+        Release();
         break;
       }
       if (++counter_ >= kRepeatFastPeriodTicks) {
@@ -104,69 +103,33 @@ void GpioInputWatchTask::GpioInfo::Check() {
 }
 
 GpioInputWatchTask::GpioInputWatchTask()
-    : Task(std::string(kTaskName), kPriority, kCoreId),
-      message_queue_(),
-      gptimer_(),
-      gpio_list_() {
-  if (!message_queue_.Create(hardware_config::kGpioMessageQueueSize)) {
-    ESP_LOGE(kTag, "Creating button poll queue failed");
-  }
+    : Task(kTaskName, kPriority, kCoreId, kStackDepth), last_wake_(0) {}
 
-  gptimer_.Create(hardware_config::kGpioTimerResolutionHz,
-                  &GpioInputWatchTask::TimerCallback, &message_queue_);
-}
+void GpioInputWatchTask::AddButton(const Button& button) {
+  // External pull-ups are not fitted, so the internal ones must be on
+  // (spec 1.1).
+  gpio_config_t io_conf = {};
+  io_conf.pin_bit_mask = 1ull << button.GetGpio();
+  io_conf.mode = GPIO_MODE_INPUT;
+  io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  io_conf.intr_type = GPIO_INTR_DISABLE;  // polled, not interrupt driven
+  gpio_config(&io_conf);
 
-GpioInputWatchTask::~GpioInputWatchTask() {
-  gptimer_.Destroy();
-  message_queue_.Destroy();
+  buttons_.push_back(button);
 }
 
 void GpioInputWatchTask::Initialize() {
   ESP_LOGI(kTag, "Start GpioInputWatchTask");
+  last_wake_ = xTaskGetTickCount();
 }
 
 void GpioInputWatchTask::Update() {
-  gptimer_.Start(hardware_config::kButtonPollIntervalMs * 1000);
-
-  int event_type = 0;
-  while (true) {
-    if (message_queue_.ReceiveWait(&event_type, kQueueTimeoutMs)) {
-      if (event_type == 1) {
-        for (auto&& gpio_info : gpio_list_) {
-          gpio_info.Check();
-        }
-      }
-    }
+  vTaskDelayUntil(&last_wake_,
+                  pdMS_TO_TICKS(hardware_config::kButtonPollIntervalMs));
+  for (auto& button : buttons_) {
+    button.Poll();
   }
 }
 
-void GpioInputWatchTask::AddMonitor(GpioInfo gpio_info, GpioPullUpDown pull) {
-  // External pull-ups are not fitted, so the internal ones must be on
-  // (spec 1.1).
-  gpio_config_t io_conf = {};
-  io_conf.pin_bit_mask = 1ull << gpio_info.GetGpioNo();
-  io_conf.mode = GPIO_MODE_INPUT;
-  io_conf.pull_up_en = (pull == GpioPullUpDown::kPullUpResistorEnable)
-                           ? GPIO_PULLUP_ENABLE
-                           : GPIO_PULLUP_DISABLE;
-  io_conf.pull_down_en = (pull == GpioPullUpDown::kPullDownResistorEnable)
-                             ? GPIO_PULLDOWN_ENABLE
-                             : GPIO_PULLDOWN_DISABLE;
-  io_conf.intr_type = GPIO_INTR_DISABLE;  // polled, not interrupt driven
-
-  gpio_config(&io_conf);
-
-  gpio_list_.emplace_back(std::move(gpio_info));
-}
-
-bool GpioInputWatchTask::TimerCallback(
-    gptimer_handle_t timer, const gptimer_alarm_event_data_t* event_data,
-    void* message_queue) {
-  MessageQueue<int>* const queue =
-      static_cast<MessageQueue<int>*>(message_queue);
-  return queue->SendFromISR(1);
-}
-
 }  // namespace transmitter_system
-
-// EOF

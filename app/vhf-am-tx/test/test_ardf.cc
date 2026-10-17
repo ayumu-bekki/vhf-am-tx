@@ -43,6 +43,7 @@ int main() {
         k.SetToneGenerator(&tone);
         sch.SetCwKeyer(&k);
         sch.SetArdfId(morse::ArdfId::kMos);
+        sch.SetCallsign("JL1HMT");
         g_fake_time_us = 0;
         sch.Start();
 
@@ -69,6 +70,7 @@ int main() {
         CwKeyer k; ToneGenerator tone; tone.Initialize();
         k.SetToneGenerator(&tone); sch.SetCwKeyer(&k);
         sch.SetArdfId(morse::ArdfId::kMo);
+        sch.SetCallsign("JL1HMT");
         g_fake_time_us = 0; sch.Start();
         bool all_zero = true;
         for (int t = 0; t < 300; t += 17) {

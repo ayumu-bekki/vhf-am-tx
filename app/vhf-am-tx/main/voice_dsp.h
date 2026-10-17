@@ -14,15 +14,16 @@
 
 namespace transmitter_system {
 
-/// Microphone path: DC removal -> HPF -> EQ -> compressor -> limiter -> LPF.
+/// Microphone path: HPF -> EQ -> compressor (+ makeup) -> LPF -> limiter.
 ///
-/// The order is fixed (spec 4). Two constraints pin it down:
-///   - the limiter must sit after the EQ, because the EQ adds up to +8.6dB at
-///     3kHz and something has to catch that;
-///   - the LPF must sit after the EQ too. The EQ inverts M2, which keeps
-///     rising with frequency - it reaches about +24dB at 10kHz relative to
-///     1kHz - so without the low pass behind it the ADC noise floor and any
-///     aliases get amplified straight into the occupied bandwidth.
+/// The input already has its DC bias removed by AdcSampler (spec 3.4). The
+/// order is fixed (spec 4). Two constraints pin it down:
+///   - the LPF must sit after the EQ. The EQ inverts M2, which keeps rising
+///     with frequency - it reaches about +24dB at 10kHz relative to 1kHz - so
+///     without the low pass behind it the ADC noise floor and any aliases get
+///     amplified straight into the occupied bandwidth;
+///   - the limiter must come last, after the EQ (up to +8.6dB at 3kHz) and the
+///     LPF, so it sees the waveform that actually reaches the modulator.
 class VoiceDsp {
  public:
   VoiceDsp();
@@ -30,8 +31,7 @@ class VoiceDsp {
   /// Installs the filter coefficients. Call once before the ISR starts.
   void Initialize();
 
-  /// Resets all filter state. Call when transmission starts so a stale tail
-  /// from the previous over does not leak into the new one.
+  /// Resets all filter state. Must not be called while the ISR is running.
   void Reset();
 
   /// Processes one sample. `sample` is the bias-corrected ADC reading
@@ -39,7 +39,8 @@ class VoiceDsp {
   /// Returns the modulation input x, already limited to the A3E window.
   float IRAM_ATTR Process(float sample);
 
-  /// Makeup gain applied before the limiter (spec 4.3). Set from the UI.
+  /// Makeup gain applied with the compressor gain (spec 4.3). Defaults to 1;
+  /// nothing in the UI adjusts it yet.
   void SetMakeupGain(float gain) {
     makeup_gain_.store(gain, std::memory_order_relaxed);
   }
@@ -50,7 +51,7 @@ class VoiceDsp {
   /// Fraction of the last second's samples that hit the limiter, 0..1.
   ///
   /// This is the only real handle the operator has on whether the speech
-  /// level is right, so it goes on the display (spec 4.2). Aim for 1-5%.
+  /// level is right (spec 4.2). Aim for 1-5%. Not shown on the LCD yet.
   float GetLimiterActivity() const;
 
   /// Peak absolute value of x seen since the last call, for level display.

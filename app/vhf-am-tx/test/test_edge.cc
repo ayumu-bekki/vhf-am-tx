@@ -126,6 +126,7 @@ int main() {
         CwKeyer k; k.SetToneGenerator(&t);
         s.SetCwKeyer(&k);
         s.SetArdfId(morse::ArdfId::kMoe);   // slot 1: 0-60s
+        s.SetCallsign("JL1HMT");
         g_fake_time_us = 0;
         s.Start();
         // Several cycles later the countdown must still be sane.

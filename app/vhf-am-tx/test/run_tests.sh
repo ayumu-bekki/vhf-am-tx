@@ -58,4 +58,11 @@ $CXX $FLAGS -o /tmp/test_edge test_edge.cc fakes.cc \
 /tmp/test_edge
 
 echo
+echo "=== regressions ==="
+$CXX $FLAGS -include algorithm -o /tmp/test_regression test_regression.cc fakes_trace.cc \
+    $MAIN/morse.cc $MAIN/tone_generator.cc $MAIN/cw_keyer.cc \
+    $MAIN/ardf_scheduler.cc $MAIN/tx_controller.cc
+/tmp/test_regression
+
+echo
 echo "All host tests passed."

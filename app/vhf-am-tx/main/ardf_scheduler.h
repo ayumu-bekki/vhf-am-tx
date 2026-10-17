@@ -29,7 +29,9 @@ class ArdfScheduler {
   void SetArdfId(morse::ArdfId id) { ardf_id_ = id; }
   morse::ArdfId GetArdfId() const { return ardf_id_; }
 
+  /// Sent at the start of every slot (spec 10.5). Empty means unset.
   void SetCallsign(const char* callsign);
+  bool HasCallsign() const { return callsign_[0] != '\0'; }
 
   /// Forwards to the keyer. Takes effect from the next string sent.
   void SetWpm(uint8_t wpm) {
@@ -41,7 +43,10 @@ class ArdfScheduler {
   /// Starts a run. The instant this is called is t = 0 of the five minute
   /// cycle (spec 10.6); operators either start their machines together or
   /// press at their own slot boundary.
-  void Start();
+  ///
+  /// Refused (returns false) while no callsign is set: every slot must open
+  /// with the station identification.
+  bool Start();
 
   /// Ends the run, stopping any transmission in progress.
   void Stop();

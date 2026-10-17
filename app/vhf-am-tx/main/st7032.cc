@@ -8,7 +8,8 @@
 #include <freertos/task.h>
 #include <rom/ets_sys.h>
 
-#include <memory>
+#include <algorithm>
+#include <cstring>
 
 #include "i2c_util.h"
 #include "logger.h"
@@ -18,6 +19,11 @@ namespace transmitter_system {
 namespace {
 // The datasheet asks for 26.3us between instructions.
 constexpr uint32_t kInstructionDelayUs = 27;
+// Data bytes chained in one transfer get no explicit gap: each byte takes
+// 9 SCL clocks on the wire, which must cover the execution time on its own.
+static_assert(9u * 1000000u / i2c_util::kI2cMasterFrequencyHz >=
+                  kInstructionDelayUs,
+              "I2C clock too fast to chain ST7032 data bytes");
 // Clear display needs considerably longer.
 constexpr uint32_t kClearDelayUs = 2000;
 // DDRAM row base addresses
@@ -45,7 +51,7 @@ ST7032::~ST7032() {
 bool ST7032::Setup(const uint8_t address, const uint8_t cols,
                    const uint8_t lines, const uint8_t charsize) {
   i2c_address_ = address;
-  num_cols_ = cols;
+  num_cols_ = std::min(cols, kMaxColumns);
   num_lines_ = lines;
 
   i2c_master_bus_handle_t bus_handle = i2c_util::GetBusHandle();
@@ -122,11 +128,30 @@ void ST7032::Clear() {
   ets_delay_us(kClearDelayUs);
 }
 
-void ST7032::SetCursor(uint8_t col, uint8_t row) {
+uint8_t ST7032::DdramAddress(uint8_t col, uint8_t row) const {
   if (row >= num_lines_) {
     row = num_lines_ > 0 ? num_lines_ - 1 : 0;
   }
-  Command(kLcdSetDDRRamAddr | (col + kRowOffsets[row]));
+  return kLcdSetDDRRamAddr | (col + kRowOffsets[row]);
+}
+
+void ST7032::SetCursor(uint8_t col, uint8_t row) {
+  Command(DdramAddress(col, row));
+}
+
+bool ST7032::WriteAt(uint8_t col, uint8_t row, const char* text, size_t len) {
+  if (col >= num_cols_) {
+    return true;
+  }
+  len = std::min<size_t>(len, num_cols_ - col);
+
+  // [Co=1,RS=0] [set DDRAM address] [Co=0,RS=1] [data ...]
+  uint8_t buffer[3 + kMaxColumns];
+  buffer[0] = kControlCommandChain;
+  buffer[1] = DdramAddress(col, row);
+  buffer[2] = kControlData;
+  std::memcpy(&buffer[3], text, len);
+  return Transmit(buffer, 3 + len);
 }
 
 void ST7032::SetCursorVisible(bool cursor_on, bool blink_on) {
@@ -138,77 +163,35 @@ void ST7032::SetCursorVisible(bool cursor_on, bool blink_on) {
   Command(kLcdDisplayControl | display_control_);
 }
 
-void ST7032::Print(const std::string& s) {
-  Write(reinterpret_cast<const uint8_t*>(s.c_str()), s.length());
-}
-
-void ST7032::Print(const char str[]) {
-  const size_t len = strlen(str);
-  Write(reinterpret_cast<const uint8_t*>(str), len);
-}
-
-void ST7032::Printf(const char* format, ...) {
-  va_list arg;
-  va_start(arg, format);
-  Vprintf(format, arg);
-  va_end(arg);
-}
-
-void ST7032::Vprintf(const char* format, va_list arg) {
-  constexpr size_t kStackBufSize = 64;
-  char stack_buf[kStackBufSize] = {};
-
-  va_list copy;
-  va_copy(copy, arg);
-  const int len = vsnprintf(stack_buf, kStackBufSize, format, copy);
-  va_end(copy);
-
-  if (len < 0) {
-    return;
-  }
-
-  if (static_cast<size_t>(len) < kStackBufSize) {
-    Write(reinterpret_cast<uint8_t*>(stack_buf), len);
-  } else {
-    auto heap_buf = std::make_unique<char[]>(len + 1);
-    vsnprintf(heap_buf.get(), len + 1, format, arg);
-    Write(reinterpret_cast<uint8_t*>(heap_buf.get()), len);
-  }
-}
-
 void ST7032::Command(const uint8_t value) {
-  Transmit(kControlCommand, value);
+  const uint8_t buffer[2] = {kControlCommand, value};
+  Transmit(buffer, sizeof(buffer));
 }
 
-void ST7032::Write(const uint8_t value) { Transmit(kControlData, value); }
-
-void ST7032::Write(const uint8_t* buffer, size_t size) {
-  while (size--) {
-    Write(*buffer++);
-  }
-}
-
-void ST7032::Transmit(const uint8_t control, const uint8_t value) {
+bool ST7032::Transmit(const uint8_t* buffer, size_t size) {
   if (!dev_handle_) {
-    return;
+    return false;
   }
 
-  const uint8_t write_buf[2] = {control, value};
-  esp_err_t ret = i2c_master_transmit(dev_handle_, write_buf, sizeof(write_buf),
-                                      i2c_util::kI2cTimeoutMs);
+  esp_err_t ret =
+      i2c_master_transmit(dev_handle_, buffer, size, i2c_util::kI2cTimeoutMs);
   if (ret != ESP_OK) {
     // Sporadic NACKs happen with RF noise on the bus. Give the controller a
-    // moment and try once more before reporting.
+    // moment and try once more before reporting. Resending a whole transfer
+    // is safe: every write carries its own address or is a plain command.
     ets_delay_us(kInstructionDelayUs * 4);
-    ret = i2c_master_transmit(dev_handle_, write_buf, sizeof(write_buf),
-                              i2c_util::kI2cTimeoutMs);
+    ret =
+        i2c_master_transmit(dev_handle_, buffer, size, i2c_util::kI2cTimeoutMs);
   }
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "ST7032 write failed (ctrl=0x%02X, val=0x%02X): %s", control,
-             value, esp_err_to_name(ret));
+    ESP_LOGE(kTag, "ST7032 write failed (%u bytes, first 0x%02X 0x%02X): %s",
+             static_cast<unsigned>(size), buffer[0], size > 1 ? buffer[1] : 0,
+             esp_err_to_name(ret));
   }
 
+  // Execution time of the last byte in the transfer.
   ets_delay_us(kInstructionDelayUs);
+  return ret == ESP_OK;
 }
 
 void ST7032::SetDisplayControl(uint8_t set_bit) {

@@ -5,6 +5,7 @@
 // sleeps 50ms in nvs_commit() to stand in for that.
 #include <chrono>
 #include <cstdio>
+#include <string>
 #include <thread>
 
 #include "transmitter_settings.h"
@@ -93,6 +94,48 @@ int main() {
     SleepMs(500);
     check(g_nvs.commits == 2, "second change got its own commit");
     check(g_nvs.kv["cw_wpm"] == "12", "stored value is the latest one");
+  }
+
+  printf("\n--- callsign: only 6 characters of A-Z / 0-9 are accepted ---\n");
+  {
+    check(TransmitterSettings::IsValidCallsign("JL1HMT"), "JL1HMT accepted");
+    check(!TransmitterSettings::IsValidCallsign("JA1AB"), "too short rejected");
+    check(!TransmitterSettings::IsValidCallsign("JA1ABCD"), "too long rejected");
+    check(!TransmitterSettings::IsValidCallsign("ja1abc"), "lower case rejected");
+    check(!TransmitterSettings::IsValidCallsign(nullptr), "null rejected");
+    TransmitterSettings s;
+    check(!s.HasCallsign(), "no built-in default callsign");
+    s.SetCallsign("JA1AB");
+    check(!s.HasCallsign(), "invalid set is ignored");
+    s.SetCallsign("JA1ABC");
+    check(std::string(s.GetCallsign()) == "JA1ABC", "valid set is taken");
+  }
+
+  printf("\n--- callsign: loaded from NVS at boot ---\n");
+  {
+    {
+      std::lock_guard<std::mutex> l(g_nvs.m);
+      g_nvs.kv["call"] = "JA1ABC";
+    }
+    TransmitterSettings s;
+    s.Load();
+    check(std::string(s.GetCallsign()) == "JA1ABC", "saved callsign is used");
+
+    {
+      std::lock_guard<std::mutex> l(g_nvs.m);
+      g_nvs.kv["call"] = "ja1";
+    }
+    TransmitterSettings bad;
+    bad.Load();
+    check(!bad.HasCallsign(), "invalid saved callsign leaves it unset");
+
+    {
+      std::lock_guard<std::mutex> l(g_nvs.m);
+      g_nvs.kv.erase("call");
+    }
+    TransmitterSettings none;
+    none.Load();
+    check(!none.HasCallsign(), "nothing saved leaves it unset");
   }
 
   printf("\n===== %s (%d failure%s) =====\n", failures ? "FAILURES" : "ALL PASS",

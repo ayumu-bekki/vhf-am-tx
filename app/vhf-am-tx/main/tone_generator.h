@@ -53,14 +53,13 @@ class ToneGenerator {
   /// (0.912 = 80% modulation / 0.877 M2 loss at 700Hz).
   void SetAmplitude(float amplitude) { amplitude_ = amplitude; }
 
-  /// Resets phase and envelope. Call when transmission stops so the next key
-  /// down starts from a zero crossing.
-  void Reset();
-
   /// Produces one sample of x. Called exactly once per 25kHz tick.
   float IRAM_ATTR Next();
 
  private:
+  /// Next table sample scaled by the amplitude; advances the phase.
+  float IRAM_ATTR NextSine();
+
   // Tables are built at startup rather than being constexpr so they land in
   // .data (internal RAM) and stay reachable with the flash cache disabled.
   int16_t sine_table_[hardware_config::kSineTableSize];

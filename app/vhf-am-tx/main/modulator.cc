@@ -210,10 +210,6 @@ void Modulator::StartRampDown() {
   ramp_active_.store(true, std::memory_order_release);
 }
 
-uint32_t Modulator::XToDuty(float x, float* dither_state) {
-  return modulation_map::XToDuty(x, dither_state);
-}
-
 bool Modulator::TimerCallback(gptimer_handle_t timer,
                               const gptimer_alarm_event_data_t* data,
                               void* user_data) {
@@ -227,8 +223,6 @@ void Modulator::Tick() {
   tick_count_.fetch_add(1, std::memory_order_relaxed);
 
   // --- Ramp handling (spec 8.2 / 8.3) -------------------------------------
-  // The raised cosine is evaluated here rather than from a table because it
-  // only runs during the 5ms transitions, not on every tick.
   const int8_t request = ramp_request_.exchange(0, std::memory_order_acq_rel);
   if (request != 0) {
     ramp_direction_ = request;
@@ -290,8 +284,7 @@ void Modulator::Tick() {
         x = carrier_level_.load(std::memory_order_relaxed) - 1.0f;
         break;
       case ModulationSource::kFixedDuty:
-        x = 0.0f;
-        break;
+        break;  // handled above
     }
 
     // Absolute clamp, independent of the per-mode soft limits.
@@ -304,11 +297,9 @@ void Modulator::Tick() {
     // Apply the start/stop ramp. Scaling (1 + x) keeps the shape of the
     // modulation while the envelope moves between 0 and the carrier level.
     if (ramp_scale_ < 1.0f) {
-      const float scaled = ramp_scale_ * (1.0f + x) - 1.0f;
-      duty = XToDuty(scaled, &dither_);
-    } else {
-      duty = XToDuty(x, &dither_);
+      x = ramp_scale_ * (1.0f + x) - 1.0f;
     }
+    duty = modulation_map::XToDuty(x, &dither_);
   }
 
   // Whatever got here, the ceiling applies. XToDuty() and SetFixedDuty()
@@ -338,14 +329,7 @@ IsrStats Modulator::GetStats() const {
   stats.max_us = stat_max_cycles_.load(std::memory_order_relaxed) / mhz;
   stats.avg_us = stat_avg_cycles_.load(std::memory_order_relaxed) / mhz;
   stats.tick_count = tick_count_.load(std::memory_order_relaxed);
-  stats.ring_underrun = 0;  // filled in by the caller from AdcSampler
-  stats.ring_overrun = 0;
   return stats;
-}
-
-void Modulator::ResetStats() {
-  stat_max_cycles_.store(0, std::memory_order_relaxed);
-  stat_avg_cycles_.store(0, std::memory_order_relaxed);
 }
 
 }  // namespace transmitter_system

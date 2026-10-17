@@ -4,15 +4,15 @@
 
 #include "tx_controller.h"
 
-#include <esp_timer.h>
-
 #include "hardware_config.h"
 #include "logger.h"
+#include "util.h"
 
 namespace transmitter_system {
 
+using util::NowMs;
+
 namespace {
-int64_t NowMs() { return esp_timer_get_time() / 1000; }
 
 [[maybe_unused]] const char* StateName(TxState state) {
   switch (state) {
@@ -54,11 +54,18 @@ bool TxController::RequestStart() {
     ESP_LOGW(kTag, "Transmit start refused: battery below inhibit threshold");
     return false;
   }
+  if (state == TxState::kTxStarting || state == TxState::kTxReady ||
+      state == TxState::kTxKeyed) {
+    // Already up. Leaving the flag set here would restart the carrier
+    // unasked the next time the controller returns to kIdle.
+    return true;
+  }
   start_request_.store(true, std::memory_order_release);
   return true;
 }
 
 void TxController::RequestStop() {
+  start_request_.store(false, std::memory_order_release);
   stop_request_.store(true, std::memory_order_release);
 }
 
@@ -157,7 +164,7 @@ void TxController::Tick() {
 
     case TxState::kTxReady:
       if (keyed_request_.load(std::memory_order_acquire)) {
-        modulator_->SetSource(keyed_source_);
+        modulator_->SetSource(keyed_source_.load(std::memory_order_acquire));
         TransitionTo(TxState::kTxKeyed);
       }
       break;

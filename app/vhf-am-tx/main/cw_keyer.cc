@@ -50,7 +50,10 @@ void CwKeyer::Send(const char* text) {
   }
 
   // Stage the text; the ISR picks it up on its next tick. Copying straight
-  // into text_ would race with the ISR reading it mid-character.
+  // into text_ would race with the ISR reading it mid-character. The flag is
+  // dropped first so the ISR cannot pick up a half-written staging buffer
+  // left pending by an earlier Send().
+  pending_load_.store(false, std::memory_order_release);
   size_t i = 0;
   for (; i < kMaxTextLength && text[i] != '\0'; ++i) {
     pending_text_[i] = text[i];
@@ -61,7 +64,12 @@ void CwKeyer::Send(const char* text) {
   pending_load_.store(true, std::memory_order_release);
 }
 
-void CwKeyer::Stop() { stop_request_.store(true, std::memory_order_release); }
+void CwKeyer::Stop() {
+  // A Send() that has not been picked up yet is cancelled too. A Send() after
+  // this call still goes out: Tick() handles the stop before the load.
+  pending_load_.store(false, std::memory_order_release);
+  stop_request_.store(true, std::memory_order_release);
+}
 
 float CwKeyer::Tick() {
   if (!tone_) {
@@ -69,25 +77,18 @@ float CwKeyer::Tick() {
   }
 
   if (stop_request_.exchange(false, std::memory_order_acq_rel)) {
-    phase_ = Phase::kIdle;
-    phase_samples_remaining_ = 0;
-    char_index_ = 0;
-    element_index_ = 0;
-    pattern_ = {0, 0};
+    ResetSequence();
     text_[0] = '\0';
-    pending_load_.store(false, std::memory_order_release);
-    busy_.store(false, std::memory_order_release);
     tone_->SetKey(false);
-    return tone_->Next();
+    if (!pending_load_.load(std::memory_order_acquire)) {
+      busy_.store(false, std::memory_order_release);
+      return tone_->Next();
+    }
   }
 
   if (pending_load_.exchange(false, std::memory_order_acq_rel)) {
     std::memcpy(text_, pending_text_, sizeof(text_));
-    char_index_ = 0;
-    element_index_ = 0;
-    pattern_ = {0, 0};
-    phase_ = Phase::kIdle;
-    phase_samples_remaining_ = 0;
+    ResetSequence();
     busy_.store(true, std::memory_order_release);
   }
 
@@ -130,6 +131,14 @@ float CwKeyer::Tick() {
   }
 
   return tone_->Next();
+}
+
+void CwKeyer::ResetSequence() {
+  phase_ = Phase::kIdle;
+  phase_samples_remaining_ = 0;
+  char_index_ = 0;
+  element_index_ = 0;
+  pattern_ = {0, 0};
 }
 
 void CwKeyer::StartNextElement() {

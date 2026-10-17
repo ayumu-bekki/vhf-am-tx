@@ -6,10 +6,6 @@
 // Include ----------------------
 #include <esp_log.h>
 
-// Enable all log levels up to Verbose at compile time
-#undef LOG_LOCAL_LEVEL
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-
 namespace transmitter_system {
 
 /// Application Log Tag
@@ -17,6 +13,8 @@ static constexpr char kTag[] = "AmTransmitter";
 
 namespace logger {
 
+/// Quietens the IDF components to WARN and lets this application log at INFO
+/// (VERBOSE when the build's default level is VERBOSE).
 void InitializeLogLevel();
 
 }  // namespace logger

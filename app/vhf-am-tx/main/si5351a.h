@@ -1,15 +1,22 @@
 #ifndef AM_TRANSMITTER_MAIN_SI5351A_H_
 #define AM_TRANSMITTER_MAIN_SI5351A_H_
+// ESP32 144MHz AM Transmitter
+// (C)2025 bekki.jp
+// Si5351A clock generator (carrier source, CLK0)
 
 #include <driver/i2c_master.h>
-#include <esp_log.h>
 
-#include <cstring>
-#include <memory>
-#include <string>
+#include <cstdint>
+#include <mutex>
 
 namespace transmitter_system {
 
+/// Si5351A driver.
+///
+/// Called from two tasks: the UI retunes it, the main loop (TxController)
+/// switches the carrier on and off. Every public operation takes mutex_, so
+/// a multi-register sequence and the shadow of the output enable register
+/// can never interleave.
 class Si5351A {
  public:
   static constexpr uint8_t kI2cDefaultAddr = 0x60;
@@ -124,27 +131,18 @@ class Si5351A {
   /// been ramped down and the drain has settled, never before.
   bool CarrierDisable();
 
-  /// True once SetFrequency + CarrierEnable have completed successfully.
-  ///
-  /// The Si5351A does have a device status register (0x00) with PLL loss-of-
-  /// lock flags, but the AE-Si5351A-B module gives no way to recover from a
-  /// stuck bus, so this tracks what the driver believes it configured rather
-  /// than re-reading the chip on every tick.
-  bool IsCarrierLocked() const { return carrier_enabled_ && frequency_set_; }
-
   bool IsReady() const { return dev_handle_ != nullptr; }
-
-  uint32_t GetFrequencyHz() const { return current_freq_hz_; }
 
  private:
   bool Write(const uint8_t reg, const uint8_t value);
 
-  void SetPLL(const uint8_t pll, const uint8_t mult, const uint32_t num,
+  bool SetPLL(const uint8_t pll, const uint8_t mult, const uint32_t num,
               const uint32_t denom);
-  void SetMultiSynth(const uint8_t synth, const uint32_t div,
+  bool SetMultiSynth(const uint8_t synth, const uint32_t div,
                      const uint8_t rdiv_bits);
 
  private:
+  std::mutex mutex_;
   i2c_master_dev_handle_t dev_handle_;
   uint8_t i2c_address_;
 
@@ -155,9 +153,6 @@ class Si5351A {
   uint32_t current_freq_hz_;
   Clk carrier_clk_;
 };
-
-using Si5351AUniquePtr = std::unique_ptr<Si5351A>;
-using Si5351ASharedPtr = std::shared_ptr<Si5351A>;
 
 }  // namespace transmitter_system
 

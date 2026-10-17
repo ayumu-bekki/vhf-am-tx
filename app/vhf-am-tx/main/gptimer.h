@@ -8,23 +8,24 @@
 
 namespace transmitter_system {
 
-/// GPTimer wrapper.
+/// GPTimer wrapper: a periodic alarm with auto-reload.
 ///
-/// Two users with different needs share this: the button poller is happy with
-/// whatever the driver hands out, while the 25kHz master tick wants a high
-/// priority, non-shared interrupt so its latency jitter stays inside the
-/// budget of spec 7.2. Hence the priority argument.
+/// The 25kHz master tick wants a high priority, non-shared interrupt so its
+/// latency jitter stays inside the budget of spec 7.2, hence the priority and
+/// sharing arguments.
 class GPTimer {
  public:
-  GPTimer() : gptimer_(nullptr) {}
-
+  GPTimer() = default;
   ~GPTimer() { Destroy(); }
+
+  GPTimer(const GPTimer&) = delete;
+  GPTimer& operator=(const GPTimer&) = delete;
 
   /// @param resolution  counter resolution in Hz
   /// @param function    alarm callback
   /// @param user_data   passed through to the callback
-  /// @param intr_priority  0 lets the driver choose (1-3); pass 3 for the
-  ///                       master tick. Higher is better for jitter.
+  /// @param intr_priority  0 lets the driver choose (1-3). Higher is better
+  ///                       for jitter.
   /// @param shared      allow the interrupt line to be shared. The master
   ///                    tick must not share, or another peripheral's handler
   ///                    lands in front of it.
@@ -69,13 +70,14 @@ class GPTimer {
     }
   }
 
-  esp_err_t Start(const uint64_t wait_count) const {
+  /// Starts the timer with an alarm every `period_count` counter steps.
+  esp_err_t Start(const uint64_t period_count) const {
     if (!gptimer_) {
       return ESP_ERR_INVALID_STATE;
     }
 
     gptimer_alarm_config_t alarm_config = {};
-    alarm_config.alarm_count = wait_count;
+    alarm_config.alarm_count = period_count;
     alarm_config.reload_count = 0ull;
     alarm_config.flags.auto_reload_on_alarm = 1u;
 
@@ -96,7 +98,7 @@ class GPTimer {
   bool IsValid() const { return gptimer_ != nullptr; }
 
  private:
-  mutable gptimer_handle_t gptimer_;
+  gptimer_handle_t gptimer_ = nullptr;
 };
 
 }  // namespace transmitter_system

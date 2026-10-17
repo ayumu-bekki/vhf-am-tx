@@ -5,8 +5,6 @@
 
 #include <esp_attr.h>
 
-#include <memory>
-
 #include "adc_sampler.h"
 #include "ardf_scheduler.h"
 #include "cw_keyer.h"
@@ -23,20 +21,27 @@
 namespace transmitter_system {
 
 /// Owns every subsystem and wires them together.
-class TransmitterSystem final
-    : public std::enable_shared_from_this<TransmitterSystem> {
+///
+/// Start() never returns: after bringing everything up, the calling task
+/// (app_main) becomes the main loop - TX sequencing, the ARDF schedule,
+/// battery and master tick supervision - under the task watchdog.
+class TransmitterSystem final {
  public:
   TransmitterSystem();
-  ~TransmitterSystem();
 
-  void Start();
+  TransmitterSystem(const TransmitterSystem&) = delete;
+  TransmitterSystem& operator=(const TransmitterSystem&) = delete;
+
+  [[noreturn]] void Start();
 
  private:
   bool InitializeHardware();
   void ConfigureUnusedGpio();
   void ConfigureStatusLed();
   void SetStatusLed(bool on);
-  void RunMainLoop();
+  void UpdateStatusLed(int64_t now_ms);
+  void StartButtons();
+  [[noreturn]] void RunMainLoop();
 
   // Callbacks handed to the modulator. These run in ISR context on every
   // 25kHz tick, so they must live in IRAM: a flash cache miss here costs tens
@@ -62,8 +67,12 @@ class TransmitterSystem final
   // False when the LCD did not answer at start-up; the board LED blinks.
   bool lcd_ok_ = true;
 
+  // Last level written to the board LED, so the pin is only touched on a
+  // change.
+  bool status_led_on_ = false;
+
   GpioInputWatchTask gpio_watch_task_;
-  UiControllerTaskUniquePtr ui_task_;
+  UiControllerTask ui_task_;
 };
 
 }  // namespace transmitter_system

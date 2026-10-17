@@ -20,6 +20,10 @@ modulation node floating at 3.6V (the source follower cannot sink current).
 `fakes_trace.cc` records every hardware action so the ordering can be asserted
 rather than assumed.
 
+`test_regression.cc` holds one block per defect found in review (keyer
+Stop/Send race, stale TX start requests, an ARDF start lost to the battery
+inhibit). Each block fails on the code before its fix.
+
 ## What these do not cover
 
 Anything touching real peripherals — LEDC, ADC, I2C — and all ISR timing.

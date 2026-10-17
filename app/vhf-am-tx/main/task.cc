@@ -4,46 +4,51 @@
 // Include ----------------------
 #include "task.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include "logger.h"
 
-Task::Task() = default;
+namespace transmitter_system {
 
-Task::Task(const std::string& taskName, const int32_t priority,
-           const int coreId)
-    : m_Status(TASK_STATUS_READY),
-      m_TaskName(taskName),
-      m_Priority(priority),
-      m_CoreId(coreId) {}
+Task::Task(std::string_view name, UBaseType_t priority, BaseType_t core_id,
+           uint32_t stack_depth)
+    : status_(Status::kReady),
+      name_(name),
+      priority_(priority),
+      core_id_(core_id),
+      stack_depth_(stack_depth) {}
 
 Task::~Task() { Stop(); }
 
-void Task::Start() {
-  if (m_Status != TASK_STATUS_READY) {
-    return;
+bool Task::Start() {
+  Status expected = Status::kReady;
+  if (!status_.compare_exchange_strong(expected, Status::kRunning)) {
+    return expected == Status::kRunning;
   }
-  m_Status = TASK_STATUS_RUN;
-  xTaskCreatePinnedToCore(this->Listener, m_TaskName.c_str(), TASK_STAC_DEPTH,
-                          this, m_Priority, nullptr, m_CoreId);
+  const BaseType_t ok =
+      xTaskCreatePinnedToCore(&Task::Entry, name_.c_str(), stack_depth_, this,
+                              priority_, nullptr, core_id_);
+  if (ok != pdPASS) {
+    ESP_LOGE(kTag, "Failed to create task %s", name_.c_str());
+    status_.store(Status::kReady);
+    return false;
+  }
+  return true;
 }
 
 void Task::Stop() {
-  if (m_Status != TASK_STATUS_RUN) {
-    return;
-  }
-  m_Status = TASK_STATUS_END;
+  Status expected = Status::kRunning;
+  status_.compare_exchange_strong(expected, Status::kStopped);
 }
 
 void Task::Run() {
   Initialize();
-  while (m_Status == TASK_STATUS_RUN) {
+  while (status_.load() == Status::kRunning) {
     Update();
   }
 }
 
-void Task::Listener(void* const pParam) {
-  if (pParam) {
-    static_cast<Task*>(pParam)->Run();
-  }
+void Task::Entry(void* param) {
+  static_cast<Task*>(param)->Run();
   vTaskDelete(nullptr);
 }
+
+}  // namespace transmitter_system

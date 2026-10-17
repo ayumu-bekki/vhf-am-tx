@@ -27,8 +27,8 @@ constexpr gpio_num_t kA0 = static_cast<gpio_num_t>(0);  // kD0 Share
 constexpr gpio_num_t kA1 = static_cast<gpio_num_t>(1);  // kD1 Share
 constexpr gpio_num_t kA2 = static_cast<gpio_num_t>(2);  // kD2 Share
 constexpr gpio_num_t kA4 = static_cast<gpio_num_t>(4);  // kMtms Share
-constexpr gpio_num_t kA5 = static_cast<gpio_num_t>(5);  // kMtck Share
-constexpr gpio_num_t kA6 = static_cast<gpio_num_t>(6);  // kMtdo Share
+constexpr gpio_num_t kA5 = static_cast<gpio_num_t>(5);  // kMtdi Share
+constexpr gpio_num_t kA6 = static_cast<gpio_num_t>(6);  // kMtck Share
 
 constexpr gpio_num_t kWifiEnable = static_cast<gpio_num_t>(3);
 
