@@ -1,0 +1,23 @@
+# Objects whose code runs inside the 25kHz tick or the ADC conversion
+# callback must not touch flash at all.
+#
+# IRAM_ATTR on a function puts its instructions in IRAM, but not the data it
+# reads. On RISC-V a float literal (the filter coefficients, kAdcBiasAlpha,
+# 0.5f in the duty rounding, ...) is loaded from the .srodata.cst4 constant
+# pool, and that pool lands in flash. While NVS is writing, the flash cache is
+# off, and an ISR that loads such a constant dies with "Cache access error".
+# Nothing makes the ISRs wait for a write: they are registered IRAM-safe on
+# purpose, so the modulation does not drop out during one.
+#
+# noflash_data moves the object's rodata (.rodata, .srodata, .sdata2) to DRAM.
+# morse is also called from the keyer ISR (Lookup() and its tables), so all of
+# it goes to IRAM/DRAM.
+[mapping:main_isr_data]
+archive: libmain.a
+entries:
+    adc_sampler (noflash_data)
+    modulator (noflash_data)
+    tone_generator (noflash_data)
+    cw_keyer (noflash_data)
+    voice_dsp (noflash_data)
+    morse (noflash)

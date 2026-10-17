@@ -1,0 +1,25 @@
+idf_component_register(SRCS "main.cc"
+                            "logger.cc"
+                            "util.cc"
+                            "task.cc"
+                            "i2c_util.cc"
+                            "si5351a.cc"
+                            "st7032.cc"
+                            "morse.cc"
+                            "tone_generator.cc"
+                            "cw_keyer.cc"
+                            "voice_dsp.cc"
+                            "modulator.cc"
+                            "adc_sampler.cc"
+                            "gpio_input_watch_task.cc"
+                            "transmitter_settings.cc"
+                            "tx_controller.cc"
+                            "ardf_scheduler.cc"
+                            "ui_controller_task.cc"
+                            "transmitter_system.cc"
+                    INCLUDE_DIRS ""
+                    LDFRAGMENTS "linker.lf"
+                    PRIV_REQUIRES driver esp_adc esp_driver_gpio esp_driver_ledc esp_driver_gptimer
+                                  esp_driver_i2c nvs_flash esp_timer esp_hal_ledc)
+
+component_compile_options(-Wno-error=format= -Wno-format)

@@ -1,0 +1,5 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Seeed_Studio_XIAO_Series") (type "KiCad") (uri "${KIPRJMOD}/fp/Seeed_Studio_XIAO_Series.pretty") (options "") (descr ""))
+	(lib (name "vhf-am-tx") (type "KiCad") (uri "${KIPRJMOD}/fp/vhf-am-tx.pretty") (options "") (descr ""))
+)

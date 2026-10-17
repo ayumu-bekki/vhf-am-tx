@@ -1,0 +1,101 @@
+// Host test: settings are saved in the background, and only when changed.
+//
+// The point is latency. A flash commit takes tens of milliseconds; if it runs
+// on the caller's thread, the UI stalls on every mode press. The stub NVS here
+// sleeps 50ms in nvs_commit() to stand in for that.
+#include <chrono>
+#include <cstdio>
+#include <thread>
+
+#include "transmitter_settings.h"
+
+using namespace transmitter_system;
+int64_t g_fake_time_us = 0;
+
+static double MsSince(std::chrono::steady_clock::time_point t0) {
+  return std::chrono::duration<double, std::milli>(
+             std::chrono::steady_clock::now() - t0)
+      .count();
+}
+static void SleepMs(int ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+int main() {
+  int failures = 0;
+  auto check = [&](bool ok, const char* what) {
+    printf("  %-62s %s\n", what, ok ? "OK" : "MISMATCH");
+    if (!ok) ++failures;
+  };
+
+  // esp_timer is faked for the other host tests; the settings use it for the
+  // hold-off, so advance it alongside real time here.
+  auto advance = [&](int ms) { g_fake_time_us += (int64_t)ms * 1000; };
+
+  printf("--- forced save returns at once (mode press) ---\n");
+  {
+    TransmitterSettings s;
+    s.Load();
+    s.StartWriter();
+    g_nvs.commits = 0;
+
+    s.SetCwWpm(s.GetCwWpm() == 20 ? 21 : 20);
+    auto t0 = std::chrono::steady_clock::now();
+    s.Tick(/*force=*/true);
+    const double ms = MsSince(t0);
+    printf("  Tick(force) took %.2f ms (commit itself takes 50 ms)\n", ms);
+    check(ms < 10.0, "caller is not blocked by the flash write");
+
+    SleepMs(300);
+    check(g_nvs.commits == 1, "the write still happened, on the background task");
+    check(!s.IsDirty(), "dirty flag cleared afterwards");
+  }
+
+  printf("\n--- nothing is written when nothing changed ---\n");
+  {
+    TransmitterSettings s;
+    s.Load();
+    s.StartWriter();
+    g_nvs.commits = 0;
+    s.SetFrequencyHz(s.GetFrequencyHz());
+    s.SetCwWpm(s.GetCwWpm());
+    s.Tick(true);
+    advance(10000);
+    SleepMs(300);
+    check(g_nvs.commits == 0, "setting the same values causes no commit");
+  }
+
+  printf("\n--- deferred save waits for the hold-off ---\n");
+  {
+    TransmitterSettings s;
+    s.Load();
+    s.StartWriter();
+    g_nvs.commits = 0;
+    s.SetCwWpm(10);
+    SleepMs(250);
+    check(g_nvs.commits == 0, "no commit before the 3 s hold-off");
+    advance(hardware_config::kNvsWriteDelayMs + 100);
+    SleepMs(400);
+    check(g_nvs.commits == 1, "one commit after the hold-off");
+  }
+
+  printf("\n--- a change during a write is not lost ---\n");
+  {
+    TransmitterSettings s;
+    s.Load();
+    s.StartWriter();
+    g_nvs.commits = 0;
+    s.SetCwWpm(11);
+    s.Tick(true);
+    SleepMs(20);  // writer is now inside the 50 ms commit
+    s.SetCwWpm(12);
+    advance(hardware_config::kNvsWriteDelayMs + 100);
+    SleepMs(500);
+    check(g_nvs.commits == 2, "second change got its own commit");
+    check(g_nvs.kv["cw_wpm"] == "12", "stored value is the latest one");
+  }
+
+  printf("\n===== %s (%d failure%s) =====\n", failures ? "FAILURES" : "ALL PASS",
+         failures, failures == 1 ? "" : "s");
+  return failures != 0;
+}

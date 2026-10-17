@@ -1,0 +1,46 @@
+# 144MHz A2A/A3E Transmitter sdkconfig Default
+
+CONFIG_IDF_TARGET="esp32c6"
+
+# CPU Freq
+# 160MHz: the 25kHz ISR runs a soft-float DSP chain (ESP32-C6 has no FPU),
+# so CPU headroom directly buys ISR budget (spec 7.1: 20us limit).
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_160=y
+
+# C++ exceptions off (saves flash/RAM)
+CONFIG_COMPILER_CXX_EXCEPTIONS=n
+CONFIG_COMPILER_CXX_RTTI=n
+
+# Compiler Optimize (performance: ISR is time critical)
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# Serial flasher config
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+
+# Partition Table
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Radio off.
+# Spec 7.3: WiFi/BLE stacks hold high-priority interrupts long enough to blow
+# the jitter budget (0.3us target). There is no need for either on a transmitter.
+CONFIG_BT_ENABLED=n
+CONFIG_ESP_WIFI_ENABLED=n
+
+# FreeRTOS tick rate (1kHz for responsive button handling)
+CONFIG_FREERTOS_HZ=1000
+
+# GPTimer: keep the 25kHz master tick ISR out of flash (spec 7.1).
+CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM=y
+CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM=y
+CONFIG_GPTIMER_ISR_CACHE_SAFE=y
+
+# ADC continuous: conversion-done callback runs from the DMA ISR.
+CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE=y
+
+# Task watchdog (spec 8.6: 3s timeout, MCU hang must not keep the carrier up)
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=3
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n

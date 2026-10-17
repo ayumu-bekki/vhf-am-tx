@@ -1,0 +1,30 @@
+
+# Old / archived files
+old/
+
+# ESP-IDF build artifacts and local config
+build/
+.cache/
+sdkconfig
+sdkconfig.old
+main/version.h
+managed_components/
+
+# KiCad backups / lock / autosave
+*-backups/
+*.kicad_prl
+fp-info-cache
+*.lck
+_autosave-*
+*.bak
+*-bak
+.history/
+
+# Editors / IDE
+.vscode/
+.idea/
+.clangd/
+compile_commands.json
+
+# macOS
+.DS_Store

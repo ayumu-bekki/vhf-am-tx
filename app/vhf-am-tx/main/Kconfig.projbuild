@@ -1,0 +1,24 @@
+menu "AM Transmitter"
+
+    config AM_TX_BATTERY_INHIBIT
+        bool "Inhibit transmission on low battery"
+        default y
+        help
+            Refuse to start transmitting, and stop a transmission in
+            progress, when the 1 second battery average falls below the
+            inhibit threshold (kBatInhibitV). The LCD also pins "LOW BATT" on
+            the top line.
+
+            Disable this for bench testing on USB power or with no battery
+            fitted. Leave it enabled for anything that runs from the pack.
+
+    config AM_TX_DEBUG_MODES
+        bool "Enable the debug test modes (D:DUTY, D:CARR, D:TONE, D:BRST)"
+        default n
+        help
+            Adds the bench test modes to the end of the SW_MODE cycle.
+            They drive the modulator and the carrier directly (fixed duty,
+            carrier only, continuous tone, 5s tone burst per minute) and can
+            heat the final stage. Leave this off for normal operation.
+
+endmenu

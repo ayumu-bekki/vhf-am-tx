@@ -1,0 +1,267 @@
+(footprint "Inductor_HandWound_SMD_Core5.0mm_W10.0mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Ferrocore DLG-1005 unshielded SMD power inductor, 10.0x9.0x5.4mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf")
+	(tags "smd inductor dlg-1005")
+	(property "Reference" "REF**"
+		(at 0 -3.9 0)
+		(layer "F.SilkS")
+		(uuid "eae70ad7-d5bc-4298-97fe-85dfbdf82245")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "Air_Core_Inductor_8mm"
+		(at 0 5.7 0)
+		(layer "F.Fab")
+		(uuid "e6ada11b-387a-4c20-853f-d1bfec099bf2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a375015d-1994-41c1-9d91-1819bf494a57")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e8ce2b68-d5c0-4834-8d97-f1326de933c7")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -2 -2.6)
+		(end 2 -2.6)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "4475972d-2dd4-4126-9c36-a31207ec5afb")
+	)
+	(fp_line
+		(start -2 2.6)
+		(end 2 2.6)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "81abd0a7-48e6-4c12-b1e0-2a286350c8e5")
+	)
+	(fp_line
+		(start -1.7 0.2)
+		(end -1.263438 0.2)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "4f22bf49-0ebb-445c-bea8-ea4abec2bf01")
+	)
+	(fp_line
+		(start 1.276562 0.2)
+		(end 1.713125 0.2)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "4d660978-9aa1-4f14-aa9c-02c7e1f60887")
+	)
+	(fp_curve
+		(pts
+			(xy -1.263438 0.2) (xy -1.263438 0.2) (xy -1.263438 -0.1175) (xy -0.945938 -0.1175)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "bdc9c5e3-9b21-4bf2-a1e3-1508865f09a2")
+	)
+	(fp_curve
+		(pts
+			(xy -0.945938 -0.1175) (xy -0.628438 -0.1175) (xy -0.628438 0.2) (xy -0.628438 0.2)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "04272280-ed49-4cd5-9025-ee94dd6bedb7")
+	)
+	(fp_curve
+		(pts
+			(xy -0.628438 0.2) (xy -0.628438 0.2) (xy -0.628438 -0.1175) (xy -0.310938 -0.1175)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "27ec3310-e9ac-4f7e-a5e4-ba1230c6ebb8")
+	)
+	(fp_curve
+		(pts
+			(xy -0.310938 -0.1175) (xy 0.006562 -0.1175) (xy 0.006562 0.2) (xy 0.006562 0.2)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "92de8ea1-33d1-455b-af96-a4cabc72a424")
+	)
+	(fp_curve
+		(pts
+			(xy 0.006562 0.2) (xy 0.006562 0.2) (xy 0.006562 -0.1175) (xy 0.324062 -0.1175)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "29a6a799-dcc1-4717-b631-7f4845310531")
+	)
+	(fp_curve
+		(pts
+			(xy 0.324062 -0.1175) (xy 0.641562 -0.1175) (xy 0.641562 0.2) (xy 0.641562 0.2)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "e465f3e1-4b04-4266-a8ed-9b617f94dafb")
+	)
+	(fp_curve
+		(pts
+			(xy 0.641562 0.2) (xy 0.641562 0.2) (xy 0.641562 -0.1175) (xy 0.959062 -0.1175)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "48983560-2b8b-453d-bb5d-c0d1c1ac7236")
+	)
+	(fp_curve
+		(pts
+			(xy 0.959062 -0.1175) (xy 1.276562 -0.1175) (xy 1.276562 0.2) (xy 1.276562 0.2)
+		)
+		(stroke
+			(width 0.079374)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "6870a167-c6b9-4eec-a168-09c0541a0323")
+	)
+	(fp_rect
+		(start -7 -3)
+		(end 7 3)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "daf65381-e776-48e2-b4d6-3a1039a3e279")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 4.3 0)
+		(layer "F.Fab")
+		(uuid "69ee5515-9750-4352-8dc5-2cf97add211e")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -6 0)
+		(size 2 4)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "9c7f2673-47c8-4056-b1aa-e134ee9919da")
+	)
+	(pad "2" smd rect
+		(at 6 0)
+		(size 2 4)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "4f54c600-b5ac-40ff-a2e2-18d6dd13dbe5")
+	)
+	(zone
+		(layers "F.Cu" "B.Cu" "In1.Cu" "In2.Cu" "In3.Cu" "In4.Cu" "In5.Cu" "In6.Cu"
+			"In7.Cu" "In8.Cu" "In9.Cu" "In10.Cu" "In11.Cu" "In12.Cu" "In13.Cu" "In14.Cu"
+			"In15.Cu" "In16.Cu" "In17.Cu" "In18.Cu" "In19.Cu" "In20.Cu" "In21.Cu"
+			"In22.Cu" "In23.Cu" "In24.Cu" "In25.Cu" "In26.Cu" "In27.Cu" "In28.Cu"
+			"In29.Cu" "In30.Cu"
+		)
+		(uuid "baae07cb-dde9-4d90-adb8-b4db01b48a47")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(keepout
+			(tracks allowed)
+			(vias allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(fill
+			(thermal_gap 0.5)
+			(thermal_bridge_width 0.5)
+			(island_removal_mode 0)
+		)
+		(polygon
+			(pts
+				(xy -6.9 -2.9) (xy 6.9 -2.9) (xy 6.9 2.9) (xy -6.9 2.9)
+			)
+		)
+	)
+	(embedded_fonts no)
+	(model "${KICAD9_3DMODEL_DIR}/Inductor_SMD.3dshapes/L_Ferrocore_DLG-1005.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
