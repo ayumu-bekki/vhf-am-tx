@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="760" height="300" class="dgm" id="lpfPlot" viewBox="0 0 760 300" role="img" aria-label="ローパスフィルタの周波数特性。145MHzで挿入損失0.26dB、288MHzで−50dB、432MHzで−78dBの減衰を示す曲線">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="760" height="300" style="fill:var(--surface)"/>
+
+<rect fill="none" height="210" stroke-width="1" style="stroke:var(--line)" width="660" x="70" y="30"></rect>
+<line class="grid" x1="70" x2="730" y1="76.7" y2="76.7"></line>
+<line class="grid" x1="70" x2="730" y1="123.3" y2="123.3"></line>
+<line class="grid" x1="70" x2="730" y1="216.7" y2="216.7"></line>
+<line class="grid" x1="254.1" x2="254.1" y1="30" y2="240"></line>
+<line class="grid" x1="438.2" x2="438.2" y1="30" y2="240"></line>
+<line class="grid" x1="535.1" x2="535.1" y1="30" y2="240"></line>
+<line class="grid" x1="642.7" x2="642.7" y1="30" y2="240"></line>
+<rect height="210" opacity="0.16" style="fill:var(--rf)" width="3.7" x="350.9" y="30"></rect>
+<line stroke-dasharray="6 4" stroke-width="1.2" style="stroke:var(--ink-3)" x1="70" x2="730" y1="170" y2="170"></line>
+<text class="t-note" x="78" y="164">−60dB 以下は理論値。試作の実測は 433MHz で −41dB（調整手順書 04章）</text>
+<text class="t-lvl" text-anchor="end" x="62" y="34">0 dB</text>
+<text class="t-lvl" text-anchor="end" x="62" y="80.7">−20</text>
+<text class="t-lvl" text-anchor="end" x="62" y="127.3">−40</text>
+<text class="t-lvl" text-anchor="end" x="62" y="173.9">−60</text>
+<text class="t-lvl" text-anchor="end" x="62" y="220.7">−80</text>
+<text class="t-lvl" text-anchor="middle" x="70" y="258">50</text>
+<text class="t-lvl" text-anchor="middle" x="254.1" y="258">100</text>
+<text class="t-lvl" text-anchor="middle" x="352.8" y="258">145</text>
+<text class="t-lvl" text-anchor="middle" x="438.2" y="258">200</text>
+<text class="t-lvl" text-anchor="middle" x="535.1" y="258">288</text>
+<text class="t-lvl" text-anchor="middle" x="642.7" y="258">432</text>
+<text class="t-lvl" text-anchor="middle" x="730" y="258">600</text>
+<text class="t-note" text-anchor="middle" x="400" y="280">周波数 [MHz]（対数）</text>
+<polyline fill="none" id="lpfCurve" points="70.0,30.3 74.4,30.3 78.9,30.3 83.3,30.3 87.7,30.3 92.1,30.3 96.6,30.3 101.0,30.3 105.4,30.3 109.9,30.3 114.3,30.3 118.7,30.3 123.2,30.3 127.6,30.2 132.0,30.2 136.4,30.2 140.9,30.2 145.3,30.2 149.7,30.2 154.2,30.2 158.6,30.2 163.0,30.2 167.4,30.2 171.9,30.2 176.3,30.2 180.7,30.2 185.2,30.2 189.6,30.2 194.0,30.2 198.5,30.2 202.9,30.2 207.3,30.2 211.7,30.2 216.2,30.2 220.6,30.3 225.0,30.3 229.5,30.3 233.9,30.3 238.3,30.3 242.8,30.3 247.2,30.3 251.6,30.3 256.0,30.3 260.5,30.3 264.9,30.4 269.3,30.4 273.8,30.4 278.2,30.4 282.6,30.4 287.0,30.4 291.5,30.4 295.9,30.4 300.3,30.4 304.8,30.4 309.2,30.4 313.6,30.4 318.1,30.4 322.5,30.4 326.9,30.5 331.3,30.5 335.8,30.5 340.2,30.5 344.6,30.6 349.1,30.6 353.5,30.6 357.9,30.7 362.3,30.8 366.8,31.0 371.2,31.5 375.6,32.3 380.1,33.6 384.5,35.4 388.9,37.9 393.4,40.9 397.8,44.4 402.2,48.1 406.6,52.0 411.1,55.9 415.5,59.9 419.9,63.8 424.4,67.7 428.8,71.5 433.2,75.2 437.7,78.9 442.1,82.5 446.5,86.0 450.9,89.5 455.4,92.9 459.8,96.2 464.2,99.5 468.7,102.8 473.1,106.0 477.5,109.2 481.9,112.3 486.4,115.4 490.8,118.5 495.2,121.5 499.7,124.5 504.1,127.5 508.5,130.4 513.0,133.3 517.4,136.2 521.8,139.1 526.2,141.9 530.7,144.8 535.1,147.6 539.5,150.4 544.0,153.1 548.4,155.9 552.8,158.6 557.2,161.4 561.7,164.1 566.1,166.8 570.5,169.5 575.0,172.1 579.4,174.8 583.8,177.5 588.3,180.1 592.7,182.7 597.1,185.3 601.5,188.0 606.0,190.6 610.4,193.1 614.8,195.7 619.3,198.3 623.7,200.9 628.1,203.4 632.6,206.0 637.0,208.5 641.4,211.1 645.8,213.6 650.3,216.1 654.7,218.7 659.1,221.2 663.6,223.7 668.0,226.2 672.4,228.7 676.8,231.2 681.3,233.7 685.7,236.2 690.1,238.6 694.6,240.0 699.0,240.0 703.4,240.0 707.9,240.0 712.3,240.0 716.7,240.0 721.1,240.0 725.6,240.0 730.0,240.0" stroke-linejoin="round" stroke-width="2" style="stroke:var(--rf)"></polyline>
+<circle cx="352.8" cy="30.6" r="4" stroke-width="2" style="fill:var(--rf);stroke:var(--surface)"></circle>
+<circle cx="535.1" cy="147.6" r="4" stroke-width="2" style="fill:var(--rf);stroke:var(--surface)"></circle>
+<circle cx="642.7" cy="211.8" r="4" stroke-width="2" style="fill:var(--rf);stroke:var(--surface)"></circle>
+<text class="t-lvl" text-anchor="end" x="344" y="24">145MHz  −0.26 dB</text>
+<text class="t-lvl" x="546" y="143">288MHz（2倍波）  −50 dB</text>
+<text class="t-lvl" text-anchor="end" x="636" y="230">432MHz（3倍波）  −78 dB</text>
+<g id="lpfHover" pointer-events="none" style="opacity:0">
+<line id="lpfHl" stroke-width="1" style="stroke:var(--ink-3)" x1="0" x2="0" y1="30" y2="240"></line>
+<circle cx="0" cy="0" id="lpfHd" r="4.5" stroke-width="2" style="fill:var(--ink);stroke:var(--surface)"></circle>
+<text class="t-lvl" id="lpfHt" style="fill:var(--ink)" x="0" y="0"></text>
+</g>
+
+</svg>

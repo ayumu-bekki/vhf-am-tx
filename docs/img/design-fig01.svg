@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="370" class="dgm" viewBox="0 0 960 370" role="img" aria-label="Si5351A から定数k形 LPF、2SC4703 ドライバ、HTL7G06S006P 終段、LPF を経てアンテナへ至る RF 系統と、MCU からトーンを供給する変調器が終段のドレイン電源に接続される構成図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="960" height="370" style="fill:var(--surface)"/>
+
+<defs>
+<marker id="arRf" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" style="fill:var(--rf)"></path>
+</marker>
+<marker id="arMod" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" style="fill:var(--mod)"></path>
+</marker>
+<marker id="arDash" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" style="fill:var(--ink-3)"></path>
+</marker>
+</defs>
+<text class="t-lane" style="fill:var(--rf)" x="40" y="32">RF 系統 — 振幅は常に一定</text>
+<text class="t-lane" style="fill:var(--mod)" x="40" y="248">変調系統 — 音声レベルの電力</text>
+<rect class="bx bx-rf" height="70" rx="3" width="112" x="40" y="70"></rect>
+<text class="t-num" x="49" y="86">1</text>
+<text class="t-title" text-anchor="middle" x="96" y="109">Si5351A</text>
+<text class="t-sub" text-anchor="middle" x="96" y="126">144MHz 発振</text>
+<rect class="bx bx-rf" height="70" rx="3" width="88" x="208" y="70"></rect>
+<text class="t-num" x="217" y="86">2</text>
+<text class="t-title" text-anchor="middle" x="252" y="109">PAD + LPF</text>
+<text class="t-sub" text-anchor="middle" x="252" y="126">定数k形</text>
+<rect class="bx bx-rf" height="70" rx="3" width="124" x="352" y="70"></rect>
+<text class="t-num" x="361" y="86">3</text>
+<text class="t-title" text-anchor="middle" x="414" y="109">2SC4703</text>
+<text class="t-sub" text-anchor="middle" x="414" y="126">A級ドライバ / 8V</text>
+<rect class="bx bx-rf" height="70" rx="3" width="168" x="532" y="70"></rect>
+<text class="t-num" x="541" y="86">4</text>
+<text class="t-title" text-anchor="middle" x="616" y="109">HTL7G06S006P</text>
+<text class="t-sub" text-anchor="middle" x="616" y="126">C級終段 / ドレイン変調</text>
+<rect class="bx bx-rf" height="70" rx="3" width="88" x="756" y="70"></rect>
+<text class="t-num" x="765" y="86">5</text>
+<text class="t-title" text-anchor="middle" x="800" y="109">LPF</text>
+<text class="t-sub" text-anchor="middle" x="800" y="126">7次 / 160MHz</text>
+<line class="ln-rf" marker-end="url(#arRf)" x1="156" x2="200" y1="105" y2="105"></line>
+<text class="t-lvl" text-anchor="middle" x="178" y="55">+8 dBm</text>
+<text class="t-note" text-anchor="middle" x="178" y="67">方形波</text>
+<line class="ln-rf" marker-end="url(#arRf)" x1="300" x2="344" y1="105" y2="105"></line>
+<text class="t-lvl" text-anchor="middle" x="322" y="55">+4.7 dBm</text>
+<line class="ln-rf" marker-end="url(#arRf)" x1="480" x2="524" y1="105" y2="105"></line>
+<text class="t-lvl" text-anchor="middle" x="502" y="55">+20 dBm</text>
+<text class="t-note" text-anchor="middle" x="502" y="67">100 mW</text>
+<line class="ln-rf" marker-end="url(#arRf)" x1="704" x2="748" y1="105" y2="105"></line>
+<text class="t-lvl" text-anchor="middle" x="726" y="55">1.5 W</text>
+<text class="t-note" text-anchor="middle" x="726" y="67">peak 6 W</text>
+<line class="ln-rf" marker-end="url(#arRf)" x1="848" x2="882" y1="105" y2="105"></line>
+<text class="t-lvl" text-anchor="middle" x="866" y="55">50 Ω</text>
+<line class="ln-rf" x1="890" x2="890" y1="107" y2="74"></line>
+<line class="ln-rf" x1="868" x2="912" y1="74" y2="74"></line>
+<text class="t-sub" text-anchor="middle" x="890" y="126">ANT</text>
+<rect class="bx bx-mod" height="70" rx="3" width="128" x="40" y="270"></rect>
+<text class="t-num" x="49" y="286">M1</text>
+<text class="t-title" text-anchor="middle" x="104" y="309">MCU</text>
+<text class="t-sub" text-anchor="middle" x="104" y="326">PWM 正弦波合成 / キーイング</text>
+<rect class="bx bx-mod" height="70" rx="3" width="128" x="224" y="270"></rect>
+<text class="t-num" x="233" y="286">M2</text>
+<text class="t-title" text-anchor="middle" x="288" y="309">RC LPF</text>
+<text class="t-sub" text-anchor="middle" x="288" y="326">2次 / PWM 平滑</text>
+<rect class="bx bx-mod" height="70" rx="3" width="192" x="408" y="270"></rect>
+<text class="t-num" x="417" y="286">M3</text>
+<text class="t-title" text-anchor="middle" x="504" y="309">シリーズパス変調器</text>
+<text class="t-sub" text-anchor="middle" x="504" y="326">NJM2125F + 2SK4017</text>
+<line class="ln-mod" marker-end="url(#arMod)" x1="172" x2="216" y1="305" y2="305"></line>
+<line class="ln-mod" marker-end="url(#arMod)" x1="356" x2="400" y1="305" y2="305"></line>
+<line class="ln-mod" marker-end="url(#arMod)" x1="560" x2="560" y1="270" y2="148"></line>
+<text class="t-lvl" text-anchor="end" x="404" y="184">3.6 V ± 3.6 V</text>
+<text class="t-note" text-anchor="end" x="404" y="198">0 〜 1.5 A（音声電力 約 1.5 W）</text>
+<rect class="bx bx-rf" height="56" rx="3" width="150" x="716" y="186"></rect>
+<text class="t-num" x="725" y="202">B</text>
+<text class="t-title" text-anchor="middle" x="791" y="212">ゲートバイアス</text>
+<text class="t-sub" text-anchor="middle" x="791" y="228">半固定 / Idq ≈ 0（C級）</text>
+<path class="ln-rf" d="M716,214 L676,214 L676,148" marker-end="url(#arRf)"></path>
+<path class="ln-dash" d="M96,270 L96,148" marker-end="url(#arDash)"></path>
+<text class="t-note" x="106" y="212">I2C 制御</text>
+
+</svg>

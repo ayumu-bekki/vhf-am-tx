@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="820" height="250" class="sch" viewBox="0 0 820 250" role="img" aria-label="マイクモジュールの出力を0.01µFで交流結合し、100kΩ2本で1.65Vにバイアスしたうえで、1kΩと47nFのアンチエイリアスフィルタを通してESP32C6のADCピンへ入れる回路図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="820" height="250" style="fill:var(--surface)"/>
+
+<defs>
+<marker id="mkAr" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" fill="currentColor"></path>
+</marker>
+<g id="gnd">
+<line stroke="currentColor" stroke-width="1.4" x1="-9" x2="9" y1="0" y2="0"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-5.5" x2="5.5" y1="4" y2="4"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-2" x2="2" y1="8" y2="8"></line>
+</g></defs>
+<rect class="cmp" height="64" rx="3" width="140" x="24" y="108"></rect>
+<text class="nm" text-anchor="middle" x="94" y="134">AE-SPU0414</text>
+<text class="nt" text-anchor="middle" x="94" y="152">OUT 0.93V / 400Ω</text>
+<text class="nt" x="24" y="98">VDD ← +3.3VA（100Ω + 10µF 経由）</text>
+<line class="w" x1="164" x2="206" y1="140" y2="140"></line>
+<line class="cmp" x1="206" x2="206" y1="126" y2="154"></line>
+<line class="cmp" x1="213" x2="213" y1="126" y2="154"></line>
+<text class="val" text-anchor="middle" x="209" y="118">0.01µF</text>
+<line class="w" x1="213" x2="340" y1="140" y2="140"></line>
+<circle class="dot" cx="280" cy="140" r="2.6"></circle>
+<line class="w" x1="280" x2="280" y1="140" y2="112"></line>
+<rect class="cmp" height="40" width="14" x="273" y="72"></rect>
+<line class="w" x1="280" x2="280" y1="72" y2="52"></line>
+<line class="rail" x1="250" x2="310" y1="52" y2="52"></line>
+<text class="railtx" x="316" y="56">マイク VDD（100Ω の後）</text>
+<text class="val" x="296" y="96">100k</text>
+<line class="w" x1="280" x2="280" y1="140" y2="172"></line>
+<rect class="cmp" height="40" width="14" x="273" y="172"></rect>
+<line class="w" x1="280" x2="280" y1="212" y2="228"></line>
+<use href="#gnd" x="280" y="228"></use>
+<text class="val" x="296" y="196">100k</text>
+<rect class="cmp" height="14" width="44" x="340" y="133"></rect>
+<text class="val" text-anchor="middle" x="362" y="126">1kΩ</text>
+<line class="w" x1="384" x2="500" y1="140" y2="140"></line>
+<circle class="dot" cx="440" cy="140" r="2.6"></circle>
+<line class="w" x1="440" x2="440" y1="140" y2="172"></line>
+<line class="cmp" x1="428" x2="452" y1="172" y2="172"></line>
+<line class="cmp" x1="428" x2="452" y1="179" y2="179"></line>
+<line class="w" x1="440" x2="440" y1="179" y2="204"></line>
+<use href="#gnd" x="440" y="204"></use>
+<text class="val" x="458" y="194">47nF</text>
+<line class="w" marker-end="url(#mkAr)" x1="500" x2="560" y1="140" y2="140"></line>
+<text class="nm" x="566" y="136">ADC ピン</text>
+<text class="nt" x="566" y="152">ESP32C6</text>
+<text class="nt" x="566" y="168">バイアス 1.65V</text>
+
+</svg>

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="880" height="262" class="sch" viewBox="0 0 880 262" role="img" aria-label="8Vレールから15kΩと10kΩ半固定抵抗で0から3.2Vの可変分圧を作り、10µF・0.1µF・1000pFでバイパスし、220kΩのブリーダを付けて終段のゲートバイアスへ送る回路図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="880" height="262" style="fill:var(--surface)"/>
+
+<defs>
+<marker id="gbAr" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" fill="currentColor"></path>
+</marker>
+<g id="gnd">
+<line stroke="currentColor" stroke-width="1.4" x1="-9" x2="9" y1="0" y2="0"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-5.5" x2="5.5" y1="4" y2="4"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-2" x2="2" y1="8" y2="8"></line>
+</g></defs>
+<line class="rail" x1="92" x2="188" y1="40" y2="40"></line>
+<text class="railtx" x="92" y="32">+8V</text>
+<line class="w" x1="140" x2="140" y1="40" y2="70"></line>
+<rect class="cmp" height="40" width="14" x="133" y="70"></rect>
+<text class="val" x="156" y="88">R33</text>
+<text class="val" x="156" y="101">15k</text>
+<line class="w" x1="140" x2="140" y1="110" y2="130"></line>
+<rect class="cmp" height="46" width="14" x="133" y="130"></rect>
+<text class="val" text-anchor="end" x="126" y="149">RV1</text>
+<text class="val" text-anchor="end" x="126" y="162">10k 半固定</text>
+<line class="w" marker-end="url(#gbAr)" x1="196" x2="152" y1="153" y2="153"></line>
+<line class="w" x1="140" x2="140" y1="176" y2="200"></line>
+<use href="#gnd" x="140" y="200"></use>
+<line class="w" x1="196" x2="620" y1="153" y2="153"></line>
+<text class="nt" x="212" y="141">0 〜 3.20V（可変）／ 内部抵抗 6.0kΩ</text>
+<circle class="dot" cx="300" cy="153" r="2.6"></circle>
+<line class="w" x1="300" x2="300" y1="153" y2="181"></line>
+<line class="cmp" x1="288" x2="312" y1="181" y2="181"></line>
+<line class="cmp" x1="288" x2="312" y1="188" y2="188"></line>
+<line class="w" x1="300" x2="300" y1="188" y2="212"></line>
+<use href="#gnd" x="300" y="212"></use>
+<text class="val" x="316" y="187">C44</text>
+<text class="val" x="316" y="200">10µF</text>
+<circle class="dot" cx="380" cy="153" r="2.6"></circle>
+<line class="w" x1="380" x2="380" y1="153" y2="181"></line>
+<line class="cmp" x1="368" x2="392" y1="181" y2="181"></line>
+<line class="cmp" x1="368" x2="392" y1="188" y2="188"></line>
+<line class="w" x1="380" x2="380" y1="188" y2="212"></line>
+<use href="#gnd" x="380" y="212"></use>
+<text class="val" x="396" y="187">C45</text>
+<text class="val" x="396" y="200">0.1µF</text>
+<circle class="dot" cx="460" cy="153" r="2.6"></circle>
+<line class="w" x1="460" x2="460" y1="153" y2="181"></line>
+<line class="cmp" x1="448" x2="472" y1="181" y2="181"></line>
+<line class="cmp" x1="448" x2="472" y1="188" y2="188"></line>
+<line class="w" x1="460" x2="460" y1="188" y2="212"></line>
+<use href="#gnd" x="460" y="212"></use>
+<text class="val" x="476" y="187">C46</text>
+<text class="val" x="476" y="200">1000p</text>
+<circle class="dot" cx="556" cy="153" r="2.6"></circle>
+<line class="w" x1="556" x2="556" y1="153" y2="174"></line>
+<rect class="cmp" height="40" width="14" x="549" y="174"></rect>
+<line class="w" x1="556" x2="556" y1="214" y2="232"></line>
+<use href="#gnd" x="556" y="232"></use>
+<text class="val" x="572" y="190">R34</text>
+<text class="val" x="572" y="203">220k</text>
+<line class="w" marker-end="url(#gbAr)" x1="620" x2="682" y1="153" y2="153"></line>
+<text class="nt" x="688" y="149">→ R35 100Ω → L9 1µH → ゲート</text>
+<text class="nt" x="688" y="163">（上図の B 点）</text>
+
+</svg>

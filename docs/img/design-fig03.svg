@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="372" class="sch" viewBox="0 0 960 372" role="img" aria-label="NJW4190M で作った17.4Vで動くNJM2125Fが、2SK4017のソースフォロワを負帰還制御し、8Vレールから3.6V±3.6Vの変調電圧を作って終段ドレインへ供給する回路図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="960" height="372" style="fill:var(--surface)"/>
+
+<defs>
+<g id="gnd">
+<line stroke="currentColor" stroke-width="1.4" x1="-9" x2="9" y1="0" y2="0"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-5.5" x2="5.5" y1="4" y2="4"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-2" x2="2" y1="8" y2="8"></line>
+</g>
+<marker id="schAr" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" fill="currentColor"></path>
+</marker>
+</defs>
+<!-- ===== charge pump ===== -->
+<rect class="cmp" height="44" rx="2" width="150" x="150" y="34"></rect>
+<text class="nm" text-anchor="middle" x="225" y="52">NJW4190M</text>
+<text class="nt" text-anchor="middle" x="225" y="68">倍電圧 / R16=10k・R17=130k</text>
+<line class="w" marker-end="url(#schAr)" x1="104" x2="150" y1="56" y2="56"></line>
+<text class="railtx" text-anchor="end" x="100" y="52">+12.8V</text>
+<line class="w" x1="300" x2="326" y1="56" y2="56"></line>
+<rect class="cmp" height="14" width="40" x="326" y="49"></rect>
+<text class="val" text-anchor="middle" x="346" y="42">100Ω</text>
+<line class="w" x1="366" x2="446" y1="56" y2="56"></line>
+<circle class="dot" cx="400" cy="56" r="2.6"></circle>
+<line class="w" x1="446" x2="446" y1="56" y2="74"></line>
+<line class="cmp" x1="435" x2="457" y1="74" y2="74"></line>
+<line class="cmp" x1="435" x2="457" y1="80" y2="80"></line>
+<line class="w" x1="446" x2="446" y1="80" y2="92"></line>
+<use href="#gnd" x="446" y="92"></use>
+<text class="val" x="464" y="80">10µF</text>
+<text class="railtx" text-anchor="middle" x="400" y="30">+17.4V</text>
+<path class="w" d="M400,56 L400,104 L345,104 L345,161"></path>
+<!-- ===== op-amp ===== -->
+<path class="cmp" d="M300,132 L300,252 L392,192 Z"></path>
+<text class="nm" text-anchor="middle" x="338" y="197">NJM2125F</text>
+<text class="val" x="313" y="170">+</text>
+<text class="val" x="313" y="230">−</text>
+<line class="w" x1="345" x2="345" y1="223" y2="268"></line>
+<use href="#gnd" x="345" y="268"></use>
+<!-- tone input chain -->
+<line class="w" marker-end="url(#schAr)" x1="60" x2="92" y1="162" y2="162"></line>
+<line class="w" x1="92" x2="300" y1="162" y2="162"></line>
+<text class="nm" x="60" y="146">M2 平滑フィルタより</text>
+<text class="nt" x="60" y="184">1.125V + 0.90Vpk（700Hz 正弦波）</text>
+<!-- feedback network -->
+<line class="w" x1="250" x2="300" y1="222" y2="222"></line>
+<line class="w" x1="250" x2="250" y1="222" y2="330"></line>
+<circle class="dot" cx="250" cy="268" r="2.6"></circle>
+<line class="w" x1="195" x2="250" y1="268" y2="268"></line>
+<line class="w" x1="195" x2="195" y1="268" y2="284"></line>
+<rect class="cmp" height="40" width="14" x="188" y="284"></rect>
+<text class="val" text-anchor="end" x="182" y="308">10k</text>
+<line class="w" x1="195" x2="195" y1="324" y2="340"></line>
+<use href="#gnd" x="195" y="340"></use>
+<line class="w" x1="250" x2="440" y1="330" y2="330"></line>
+<rect class="cmp" height="14" width="40" x="440" y="323"></rect>
+<text class="val" text-anchor="middle" x="460" y="316">22k</text>
+<line class="w" x1="480" x2="558" y1="330" y2="330"></line>
+<line class="w" x1="558" x2="558" y1="300" y2="330"></line>
+<text class="nt" x="300" y="348">帰還：出力を 1/3.2 に分圧</text>
+<!-- C5: opamp output -> -input (high-frequency feedback) -->
+<circle class="dot" cx="410" cy="192" r="2.6"></circle>
+<path class="w" d="M410,192 L410,300 L381,300"></path>
+<line class="cmp" x1="381" x2="381" y1="289" y2="311"></line>
+<line class="cmp" x1="374" x2="374" y1="289" y2="311"></line>
+<path class="w" d="M374,300 L272,300 L272,222"></path>
+<circle class="dot" cx="272" cy="222" r="2.6"></circle>
+<text class="val" text-anchor="middle" x="322" y="294">C6 1000p</text>
+<!-- gate drive -->
+<line class="w" x1="392" x2="430" y1="192" y2="192"></line>
+<rect class="cmp" height="14" width="40" x="430" y="185"></rect>
+<text class="val" text-anchor="middle" x="450" y="178">470Ω</text>
+<line class="w" x1="470" x2="524" y1="192" y2="192"></line>
+<!-- MOSFET -->
+<circle class="cmp" cx="560" cy="192" fill="none" r="36"></circle>
+<line class="w" x1="524" x2="524" y1="170" y2="214"></line>
+<line class="w" x1="536" x2="536" y1="170" y2="180"></line>
+<line class="w" x1="536" x2="536" y1="187" y2="197"></line>
+<line class="w" x1="536" x2="536" y1="204" y2="214"></line>
+<line class="w" x1="536" x2="558" y1="175" y2="175"></line>
+<line class="w" x1="558" x2="558" y1="175" y2="120"></line>
+<circle class="dot" cx="558" cy="120" r="2.6"></circle>
+<line class="w" x1="536" x2="558" y1="192" y2="192"></line>
+<path class="cmp-f" d="M552,192 L560,188 L560,196 Z"></path>
+<line class="w" x1="558" x2="558" y1="192" y2="300"></line>
+<text class="nm" x="604" y="180">2SK4017</text>
+<text class="nt" x="604" y="194">ケース側板に取付（J7）</text>
+<!-- +8V rail -->
+<line class="rail" x1="500" x2="900" y1="120" y2="120"></line>
+<text class="railtx" x="500" y="112">+8V（RT8250 より）</text>
+<!-- output branch -->
+<circle class="dot" cx="558" cy="300" r="2.6"></circle>
+<text class="val" text-anchor="end" x="548" y="286">変調出力 0〜7.2V</text>
+<line class="w" x1="558" x2="700" y1="300" y2="300"></line>
+<circle class="dot" cx="616" cy="300" r="2.6"></circle>
+<line class="w" x1="616" x2="616" y1="300" y2="316"></line>
+<line class="cmp" x1="605" x2="627" y1="316" y2="316"></line>
+<line class="cmp" x1="605" x2="627" y1="322" y2="322"></line>
+<line class="w" x1="616" x2="616" y1="322" y2="334"></line>
+<use href="#gnd" x="616" y="334"></use>
+<text class="val" text-anchor="end" x="600" y="332">0.1µF</text>
+<path class="w" d="M700,300 q12,-16 24,0 q12,-16 24,0 q12,-16 24,0"></path>
+<text class="val" text-anchor="middle" x="736" y="282">RFC 0.47µH 空芯</text>
+<line class="w" marker-end="url(#schAr)" x1="772" x2="836" y1="300" y2="300"></line>
+<text class="nm" x="842" y="296">→ 終段ドレイン</text>
+<text class="nt" x="842" y="312">HTL7G06S006P</text>
+
+</svg>

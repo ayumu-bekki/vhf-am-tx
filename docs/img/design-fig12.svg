@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="900" height="400" class="dgm" viewBox="0 0 900 400" role="img" aria-label="4S LiFePO4 バッテリーからポリスイッチと逆接保護を経て、倍電圧チャージポンプと8V・3.3Vの2つの降圧コンバータに分岐し、Si5351A 用の 3.3V LDO は 8V レールから取る電源系統図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="900" height="400" style="fill:var(--surface)"/>
+<defs><marker id="arMod" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" style="fill:var(--mod)"></path>
+</marker></defs>
+<rect class="bx bx-mod" height="64" rx="3" width="132" x="30" y="170"></rect>
+<text class="t-title" text-anchor="middle" x="96" y="196">4S LiFePO4</text>
+<text class="t-sub" text-anchor="middle" x="96" y="214">12.8V / 3〜6Ah</text>
+<line class="ln-mod" marker-end="url(#arMod)" x1="166" x2="200" y1="202" y2="202"></line>
+<rect class="bx bx-mod" height="64" rx="3" width="132" x="204" y="170"></rect>
+<text class="t-title" text-anchor="middle" x="270" y="196">保護</text>
+<text class="t-sub" text-anchor="middle" x="270" y="214">ポリスイッチ 1.85A / 逆接 P-ch</text>
+<path class="ln-mod" d="M340,202 L372,202"></path>
+<circle cx="372" cy="202" r="3" style="fill:var(--mod)"></circle>
+<path class="ln-mod" d="M372,202 L372,64 L410,64" marker-end="url(#arMod)"></path>
+<path class="ln-mod" d="M372,202 L410,202" marker-end="url(#arMod)"></path>
+<path class="ln-mod" d="M372,202 L372,300 L410,300" marker-end="url(#arMod)"></path>
+<rect class="bx bx-mod" height="54" rx="3" width="168" x="414" y="38"></rect>
+<text class="t-title" text-anchor="middle" x="498" y="60">NJW4190M</text>
+<text class="t-sub" text-anchor="middle" x="498" y="78">倍電圧 → 17.4V / 2mA</text>
+<rect class="bx bx-mod" height="54" rx="3" width="168" x="414" y="176"></rect>
+<text class="t-title" text-anchor="middle" x="498" y="198">RT8250</text>
+<text class="t-sub" text-anchor="middle" x="498" y="216">降圧 → 8V / 3A</text>
+<rect class="bx bx-mod" height="54" rx="3" width="168" x="414" y="274"></rect>
+<text class="t-title" text-anchor="middle" x="498" y="296">BP5293-33</text>
+<text class="t-sub" text-anchor="middle" x="498" y="314">3端子内蔵型 → 3.3V/1A</text>
+<line class="ln-mod" marker-end="url(#arMod)" x1="586" x2="628" y1="64" y2="64"></line>
+<text class="t-lvl" x="634" y="61">NJM2125F</text>
+<text class="t-note" x="634" y="75">変調器オペアンプ</text>
+<path class="ln-mod" d="M586,202 L616,202 M616,132 L616,246"></path>
+<line class="ln-mod" marker-end="url(#arMod)" x1="616" x2="656" y1="132" y2="132"></line>
+<line class="ln-mod" marker-end="url(#arMod)" x1="616" x2="656" y1="170" y2="170"></line>
+<line class="ln-mod" marker-end="url(#arMod)" x1="616" x2="656" y1="208" y2="208"></line>
+<line class="ln-mod" marker-end="url(#arMod)" x1="616" x2="656" y1="246" y2="246"></line>
+<text class="t-lvl" x="662" y="129">M3 変調器パス</text>
+<text class="t-note" x="662" y="143">平均 0.8A / ピーク 1.5A</text>
+<text class="t-lvl" x="662" y="167">2SC4703 コレクタ</text>
+<text class="t-note" x="662" y="181">30mA（Vcbo 保護のため 8V）</text>
+<text class="t-lvl" x="662" y="205">終段ゲートバイアス</text>
+<text class="t-note" x="662" y="219">半固定分圧 + RC</text>
+<text class="t-lvl" x="662" y="243">82Ω → LDO 3.3V → Si5351A</text>
+<text class="t-note" x="662" y="257">38mA。MCU レールから分離する</text>
+<line class="ln-mod" marker-end="url(#arMod)" x1="586" x2="656" y1="300" y2="300"></line>
+<text class="t-lvl" x="662" y="297">XIAO ESP32C6（3V3 ピン）</text>
+<text class="t-note" x="662" y="311">内蔵レギュレータは経由しない</text>
+<text class="t-note" x="30" y="290">送信時の総消費：約 8.5W / 0.7A</text>
+<text class="t-note" x="30" y="308">入力の許容範囲：10.5V 〜 17V</text>
+<text class="t-note" x="30" y="326">連続送信で 3Ah が約4時間</text>
+<text class="t-note" x="30" y="344">1分/5分運用なら 20時間近く</text>
+
+</svg>

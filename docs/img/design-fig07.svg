@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="860" height="290" class="sch" viewBox="0 0 860 290" role="img" aria-label="50Ω入力を22pFと56nHで整合し、10Ωのベース抵抗を介して2SC4703のベースへ入れ、コレクタは2.2µHのRFCで8V給電しつつ、コレクタ節点の浮遊容量と120nHで50Ωへ変換して終段へ渡す回路図。並列トリマC39は実装しない">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="860" height="290" style="fill:var(--surface)"/>
+
+<defs>
+<marker id="dvAr" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" fill="currentColor"></path>
+</marker>
+<g id="gnd">
+<line stroke="currentColor" stroke-width="1.4" x1="-9" x2="9" y1="0" y2="0"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-5.5" x2="5.5" y1="4" y2="4"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-2" x2="2" y1="8" y2="8"></line>
+</g></defs>
+<line class="rail" x1="250" x2="420" y1="28" y2="28"></line>
+<line class="w" marker-end="url(#dvAr)" x1="200" x2="246" y1="28" y2="28"></line>
+<text class="railtx" text-anchor="end" x="196" y="24">+8V</text>
+<circle class="dot" cx="262" cy="28" r="2.6"></circle>
+<line class="w" x1="262" x2="262" y1="28" y2="44"></line>
+<line class="cmp" x1="250" x2="274" y1="44" y2="44"></line>
+<line class="cmp" x1="250" x2="274" y1="51" y2="51"></line>
+<line class="w" x1="262" x2="262" y1="51" y2="64"></line>
+<use href="#gnd" x="262" y="64"></use>
+<text class="val" text-anchor="end" x="246" y="54">0.1µ + 1000p</text>
+<line class="w" marker-end="url(#dvAr)" x1="24" x2="58" y1="120" y2="120"></line>
+<text class="nt" x="24" y="84">IN 50Ω（05章より）</text>
+<text class="nt" x="24" y="140">+4.7 dBm</text>
+<line class="w" x1="58" x2="72" y1="120" y2="120"></line>
+<line class="cmp" x1="72" x2="72" y1="106" y2="134"></line>
+<line class="cmp" x1="79" x2="79" y1="106" y2="134"></line>
+<text class="val" text-anchor="middle" x="75" y="98">1000p</text>
+<line class="w" x1="79" x2="130" y1="120" y2="120"></line>
+<circle class="dot" cx="104" cy="120" r="2.6"></circle>
+<line class="w" x1="104" x2="104" y1="120" y2="144"></line>
+<line class="cmp" x1="92" x2="116" y1="144" y2="144"></line>
+<line class="cmp" x1="92" x2="116" y1="151" y2="151"></line>
+<line class="w" x1="104" x2="104" y1="151" y2="172"></line>
+<use href="#gnd" x="104" y="172"></use>
+<text class="val" text-anchor="end" x="88" y="154">22p</text>
+<path class="w" d="M130,120 q8.75,-20 17.5,0 q8.75,-20 17.5,0 q8.75,-20 17.5,0 q8.75,-20 17.5,0"></path>
+<text class="ref" text-anchor="middle" x="165" y="92">L7</text>
+<text class="val" text-anchor="middle" x="165" y="80">56 nH（可変）</text>
+<line class="w" x1="200" x2="220" y1="120" y2="120"></line>
+<rect class="cmp" height="14" width="40" x="220" y="113"></rect>
+<text class="val" text-anchor="middle" x="240" y="106">10Ω</text>
+<line class="w" x1="260" x2="306" y1="120" y2="120"></line>
+<circle class="dot" cx="285" cy="120" r="2.6"></circle>
+<line class="w" x1="285" x2="285" y1="120" y2="100"></line>
+<rect class="cmp" height="40" width="14" x="278" y="60"></rect>
+<line class="w" x1="285" x2="285" y1="60" y2="28"></line>
+<circle class="dot" cx="285" cy="28" r="2.6"></circle>
+<text class="val" text-anchor="end" x="271" y="96">3.0k</text>
+<line class="w" x1="285" x2="285" y1="120" y2="152"></line>
+<rect class="cmp" height="40" width="14" x="278" y="152"></rect>
+<line class="w" x1="285" x2="285" y1="192" y2="212"></line>
+<use href="#gnd" x="285" y="212"></use>
+<text class="val" text-anchor="end" x="271" y="176">620Ω</text>
+<circle class="cmp" cx="338" cy="120" fill="none" r="32"></circle>
+<line class="w" x1="320" x2="320" y1="104" y2="136"></line>
+<line class="w" x1="306" x2="320" y1="120" y2="120"></line>
+<line class="w" x1="320" x2="352" y1="114" y2="92"></line>
+<line class="w" x1="352" x2="352" y1="92" y2="60"></line>
+<line class="w" x1="320" x2="352" y1="126" y2="148"></line>
+<path class="cmp-f" d="M340,138 L349,144 L338,146 Z"></path>
+<line class="w" x1="352" x2="352" y1="148" y2="190"></line>
+<text class="nm" text-anchor="middle" x="300" y="248">2SC4703</text>
+<text class="nt" text-anchor="middle" x="286" y="262">Ic 35mA（エミッタ 12Ω）</text>
+<circle class="dot" cx="352" cy="190" r="2.6"></circle>
+<line class="w" x1="352" x2="352" y1="190" y2="196"></line>
+<rect class="cmp" height="40" width="14" x="345" y="196"></rect>
+<line class="w" x1="352" x2="352" y1="236" y2="256"></line>
+<use href="#gnd" x="352" y="256"></use>
+<text class="val" text-anchor="end" x="338" y="220">22Ω</text>
+<path class="w" d="M352,190 L400,190 L400,200"></path>
+<line class="cmp" x1="388" x2="412" y1="200" y2="200"></line>
+<line class="cmp" x1="388" x2="412" y1="207" y2="207"></line>
+<path class="w" d="M400,207 L400,236 L352,236"></path>
+<text class="val" x="418" y="208">2200p</text>
+<line class="w" x1="352" x2="490" y1="60" y2="60"></line>
+<circle class="dot" cx="400" cy="60" r="2.6"></circle>
+<path class="w" d="M400,60 q-14,-8 0,-16 q-14,-8 0,-16"></path>
+<circle class="dot" cx="400" cy="28" r="2.6"></circle>
+<text class="val" x="414" y="48">L4 2.2µH</text>
+<circle class="dot" cx="450" cy="60" r="2.6"></circle>
+<line class="w" stroke-dasharray="3 3" x1="450" x2="450" y1="60" y2="84"></line>
+<line class="cmp" stroke-dasharray="3 3" x1="438" x2="462" y1="84" y2="84"></line>
+<line class="cmp" stroke-dasharray="3 3" x1="438" x2="462" y1="91" y2="91"></line>
+<line class="w" stroke-dasharray="3 3" x1="450" x2="450" y1="91" y2="112"></line>
+<use href="#gnd" x="450" y="112"></use>
+<text class="val" x="466" y="94">C39 DNP</text>
+<text class="nt" x="466" y="108">浮遊 6.6pF で代用</text>
+<path class="w" d="M490,60 q8.75,-20 17.5,0 q8.75,-20 17.5,0 q8.75,-20 17.5,0 q8.75,-20 17.5,0"></path>
+<text class="ref" text-anchor="middle" x="525" y="32">L6</text>
+<text class="val" text-anchor="middle" x="525" y="20">120 nH（可変）</text>
+<line class="w" x1="560" x2="590" y1="60" y2="60"></line>
+<line class="cmp" x1="590" x2="590" y1="46" y2="74"></line>
+<line class="cmp" x1="597" x2="597" y1="46" y2="74"></line>
+<text class="val" text-anchor="middle" x="593" y="38">1000p</text>
+<line class="w" marker-end="url(#dvAr)" x1="597" x2="650" y1="60" y2="60"></line>
+<text class="nm" x="656" y="56">→ 終段入力整合 50Ω</text>
+<text class="nt" x="656" y="72">+20 dBm（100 mW）</text>
+
+</svg>

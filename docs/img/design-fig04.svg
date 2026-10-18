@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="620" height="180" class="sch" viewBox="0 0 620 180" role="img" aria-label="MCU の250kHz PWM出力を1kΩと47nFの2段RCフィルタで平滑し、700Hzの正弦波として変調器へ渡す回路図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="620" height="180" style="fill:var(--surface)"/>
+
+<defs>
+<marker id="m2bAr" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M0,0 L9,5 L0,10 z" fill="currentColor"></path>
+</marker>
+<g id="gnd">
+<line stroke="currentColor" stroke-width="1.4" x1="-9" x2="9" y1="0" y2="0"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-5.5" x2="5.5" y1="4" y2="4"></line>
+<line stroke="currentColor" stroke-width="1.4" x1="-2" x2="2" y1="8" y2="8"></line>
+</g></defs>
+<line class="w" marker-end="url(#m2bAr)" x1="24" x2="58" y1="90" y2="90"></line>
+<text class="nt" x="24" y="62">MCU PWM 250kHz / 8bit</text>
+<text class="nt" x="24" y="76">0〜3.3V</text>
+<line class="w" x1="58" x2="70" y1="90" y2="90"></line>
+<rect class="cmp" height="14" width="40" x="70" y="83"></rect>
+<text class="val" text-anchor="middle" x="90" y="76">1k</text>
+<line class="w" x1="110" x2="160" y1="90" y2="90"></line>
+<circle class="dot" cx="135" cy="90" r="2.6"></circle>
+<line class="w" x1="135" x2="135" y1="90" y2="112"></line>
+<line class="cmp" x1="123" x2="147" y1="112" y2="112"></line>
+<line class="cmp" x1="123" x2="147" y1="119" y2="119"></line>
+<line class="w" x1="135" x2="135" y1="119" y2="140"></line>
+<use href="#gnd" x="135" y="140"></use>
+<text class="val" text-anchor="end" x="119" y="122">47n</text>
+<rect class="cmp" height="14" width="40" x="160" y="83"></rect>
+<text class="val" text-anchor="middle" x="180" y="76">1k</text>
+<line class="w" x1="200" x2="250" y1="90" y2="90"></line>
+<circle class="dot" cx="225" cy="90" r="2.6"></circle>
+<line class="w" x1="225" x2="225" y1="90" y2="112"></line>
+<line class="cmp" x1="213" x2="237" y1="112" y2="112"></line>
+<line class="cmp" x1="213" x2="237" y1="119" y2="119"></line>
+<line class="w" x1="225" x2="225" y1="119" y2="140"></line>
+<use href="#gnd" x="225" y="140"></use>
+<text class="val" x="241" y="122">47n</text>
+<line class="w" marker-end="url(#m2bAr)" x1="250" x2="300" y1="90" y2="90"></line>
+<text class="nm" x="306" y="86">→ M3 の +入力</text>
+<text class="nt" x="306" y="102">1.125V + 0.90Vpk（700Hz 正弦波）</text>
+<text class="nt" x="24" y="164">fc = 1/(2πRC) = 3.39kHz（2段）</text>
+
+</svg>

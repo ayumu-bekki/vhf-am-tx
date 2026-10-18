@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="720" height="320" class="dgm" viewBox="0 0 720 320" role="img" aria-label="上段に0Vから7.2Vまで揺れるドレイン電圧の正弦波、下段にそれと同じ形の包絡線を持つ144MHz出力を並べた波形図">
+<style>
+svg {
+    --ground:    #edf0f0;
+    --surface:   #f9fbfa;
+    --surface-2: #e2e8e8;
+    --ink:       #14181a;
+    --ink-2:     #4a5457;
+    --ink-3:     #79878b;
+    --line:      #c7d0d0;
+    --line-soft: #d9e0e0;
+    --rf:        #b0561f;
+    --mod:       #1c6b78;
+    --warn:      #8d2f42;
+    --font-display: "IBM Plex Sans Condensed", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+@media (prefers-color-scheme: dark) { svg {
+    --ground:    #11161a;
+    --surface:   #1a2126;
+    --surface-2: #232c32;
+    --ink:       #e3e9e9;
+    --ink-2:     #a5b2b5;
+    --ink-3:     #77878d;
+    --line:      #35424a;
+    --line-soft: #2a343a;
+    --rf:        #e08a4e;
+    --mod:       #5cb5c2;
+    --warn:      #e0808f;
+  } }
+svg { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; }
+.dgm { color: var(--ink); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+.dgm .bx { fill: var(--surface-2); stroke-width: 1.5; }
+.dgm .bx-rf { stroke: var(--rf); }
+.dgm .bx-mod { stroke: var(--mod); }
+.dgm .t-title { font-size: 13px; font-weight: 700; fill: currentColor; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.dgm .t-sub { font-size: 10px; fill: var(--ink-3); }
+.dgm .t-num { font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-3); }
+.dgm .t-lvl { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.dgm .t-lane { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; }
+.dgm .t-note { font-size: 9.5px; fill: var(--ink-3); }
+.dgm .ln-rf { stroke: var(--rf); stroke-width: 1.8; fill: none; }
+.dgm .ln-mod { stroke: var(--mod); stroke-width: 1.8; fill: none; }
+.dgm .ln-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+.dgm .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.sch { color: var(--ink); }
+.sch .w { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.sch .cmp { stroke: currentColor; stroke-width: 1.4; fill: var(--surface); }
+.sch .cmp-f { stroke: currentColor; stroke-width: 1.4; fill: currentColor; }
+.sch .ref { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--rf); }
+.sch .val { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink-2); }
+.sch .nm  { font-size: 11px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 600; fill: currentColor; }
+.sch .nt  { font-size: 9.5px; fill: var(--ink-3); }
+.sch .rail { stroke: var(--mod); stroke-width: 2; fill: none; }
+.sch .railtx { font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--mod); }
+.sch .dot { fill: currentColor; }
+</style>
+<rect x="0" y="0" width="720" height="320" style="fill:var(--surface)"/>
+
+<defs>
+<pattern height="10" id="rfhatch" patternUnits="userSpaceOnUse" width="5">
+<line stroke-opacity="0.5" stroke-width="1.1" style="stroke:var(--rf)" x1="0.5" x2="0.5" y1="0" y2="10"></line>
+</pattern>
+</defs>
+<line class="grid" x1="100" x2="640" y1="36" y2="36"></line>
+<line class="grid" x1="100" x2="640" y1="70" y2="70"></line>
+<line class="grid" x1="100" x2="640" y1="104" y2="104"></line>
+<path class="ln-mod" d="M100,70 c30,-45.3 60,-45.3 90,0 c30,45.3 60,45.3 90,0 c30,-45.3 60,-45.3 90,0 c30,45.3 60,45.3 90,0 c30,-45.3 60,-45.3 90,0 c30,45.3 60,45.3 90,0"></path>
+<text class="t-title" text-anchor="end" x="88" y="66">ドレイン電圧</text>
+<text class="t-sub" text-anchor="end" x="88" y="82">変調器の出力</text>
+<text class="t-lvl" style="fill:var(--mod)" x="650" y="40">7.2 V</text>
+<text class="t-lvl" style="fill:var(--mod)" x="650" y="74">3.6 V</text>
+<text class="t-lvl" style="fill:var(--mod)" x="650" y="108">0 V</text>
+<line class="ln-dash" x1="145" x2="145" y1="36" y2="120"></line>
+<line class="ln-dash" x1="235" x2="235" y1="104" y2="200"></line>
+<line class="grid" x1="100" x2="640" y1="120" y2="120"></line>
+<line class="grid" x1="100" x2="640" y1="160" y2="160"></line>
+<line class="grid" x1="100" x2="640" y1="200" y2="200"></line>
+<path d="M100,160 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 L640,240 c-30,-53.3 -60,-53.3 -90,0 c-30,53.3 -60,53.3 -90,0 c-30,-53.3 -60,-53.3 -90,0 c-30,53.3 -60,53.3 -90,0 c-30,-53.3 -60,-53.3 -90,0 c-30,53.3 -60,53.3 -90,0 Z" fill="url(#rfhatch)" stroke="none"></path>
+<path class="ln-rf" d="M100,160 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0"></path>
+<path class="ln-rf" d="M100,240 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0 c30,53.3 60,53.3 90,0 c30,-53.3 60,-53.3 90,0"></path>
+<text class="t-title" text-anchor="end" x="88" y="196">RF 出力</text>
+<text class="t-sub" text-anchor="end" x="88" y="212">144MHz の包絡線</text>
+<text class="t-lvl" style="fill:var(--rf)" x="650" y="126">6 W</text>
+<text class="t-lvl" style="fill:var(--rf)" x="650" y="164">1.5 W</text>
+<text class="t-lvl" style="fill:var(--rf)" x="650" y="204">0 W</text>
+<text class="t-note" x="100" y="300">C級増幅段は「出力RF電圧 ∝ ドレイン電圧」。だから電源を揺らすと包絡線がその形になる。</text>
+
+</svg>
