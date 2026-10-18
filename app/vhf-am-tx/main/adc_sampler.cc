@@ -6,8 +6,6 @@
 
 #include <esp_adc/adc_cali_scheme.h>
 
-#include <cstring>
-
 #include "logger.h"
 
 namespace transmitter_system {

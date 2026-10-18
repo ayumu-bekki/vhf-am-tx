@@ -26,7 +26,7 @@ void Modulator::StartRampUp()   { g_trace.push_back("duty:ramp_up");   ramp_acti
 void Modulator::StartRampDown() { g_trace.push_back("duty:ramp_down"); ramp_active_.store(false); }
 
 Si5351A::Si5351A()
-    : dev_handle_(nullptr), i2c_address_(0), clk_output_status_(0),
+    : dev_handle_(nullptr), clk_output_status_(0),
       carrier_enabled_(false), frequency_set_(true),
       current_freq_hz_(144920000), carrier_clk_(Clk::kClk0) {}
 Si5351A::~Si5351A() {}

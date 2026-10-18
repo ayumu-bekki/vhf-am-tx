@@ -34,7 +34,6 @@ constexpr int kProbeTimeoutMs = 100;
 
 ST7032::ST7032()
     : dev_handle_(nullptr),
-      i2c_address_(0),
       display_function_(0),
       display_control_(0),
       display_mode_(0),
@@ -50,7 +49,6 @@ ST7032::~ST7032() {
 
 bool ST7032::Setup(const uint8_t address, const uint8_t cols,
                    const uint8_t lines, const uint8_t charsize) {
-  i2c_address_ = address;
   num_cols_ = std::min(cols, kMaxColumns);
   num_lines_ = lines;
 

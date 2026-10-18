@@ -42,7 +42,6 @@ enum class ModulationSource : uint8_t {
 struct IsrStats {
   uint32_t max_us;  // worst case since boot
   uint32_t avg_us;  // average over the last ~40ms
-  uint32_t tick_count;
 };
 
 /// Owns the LEDC channel and the 25kHz master tick.
@@ -87,9 +86,6 @@ class Modulator {
 
   void SetSource(ModulationSource source) {
     source_.store(source, std::memory_order_release);
-  }
-  ModulationSource GetSource() const {
-    return source_.load(std::memory_order_acquire);
   }
 
   /// Fixed duty for the D:DUTY calibration mode. Clamped to kDutyLimit.

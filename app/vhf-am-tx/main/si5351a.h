@@ -144,7 +144,6 @@ class Si5351A {
  private:
   std::mutex mutex_;
   i2c_master_dev_handle_t dev_handle_;
-  uint8_t i2c_address_;
 
   uint8_t clk_output_status_;
 

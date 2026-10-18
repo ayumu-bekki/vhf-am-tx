@@ -1,4 +1,4 @@
-// Host test: x -> duty mapping and the hard ceiling (R9 22k, ADR-024).
+// Host test: x -> duty mapping and the hard ceiling (R8 22k, ADR-024).
 //
 // The mapping and the ceiling are the last thing between a firmware bug and
 // the 8V rail, so they are checked on the host, with the exact functions the
@@ -33,7 +33,7 @@ int main() {
   Check(static_cast<float>(kDutyHardMax) / 256.0f * hardware_config::kVddPwm *
                 hardware_config::kModGain <= 7.85f,
         "hard max stays under the 7.85V rail limit");
-  // The old 20k value must not satisfy the derivation (guards a wrong R9).
+  // The old 20k value must not satisfy the derivation (guards a wrong R8).
   const float old_gain = 1.0f + 20.0e3f / 10.0e3f;
   const uint32_t old_hard = static_cast<uint32_t>(std::floor(7.75f * 256.0f / (3.3f * old_gain)));
   Check(old_hard == 200 && old_hard != kDutyHardMax, "20k would give 200: the constants really are for 22k");

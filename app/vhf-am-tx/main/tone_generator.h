@@ -47,11 +47,6 @@ class ToneGenerator {
   bool IRAM_ATTR IsSilent() const { return !key_down_ && envelope_index_ == 0; }
 
   void SetKeyingMode(KeyingMode mode) { keying_mode_ = mode; }
-  KeyingMode GetKeyingMode() const { return keying_mode_; }
-
-  /// Output amplitude of the tone, in units of x. Defaults to kXGainA2a
-  /// (0.912 = 80% modulation / 0.877 M2 loss at 700Hz).
-  void SetAmplitude(float amplitude) { amplitude_ = amplitude; }
 
   /// Produces one sample of x. Called exactly once per 25kHz tick.
   float IRAM_ATTR Next();
@@ -68,6 +63,8 @@ class ToneGenerator {
   uint32_t phase_;
   uint32_t envelope_index_;
   bool key_down_;
+  // Tone amplitude in units of x: kXGainA2a (0.912 = 80% modulation / 0.877
+  // M2 loss at 700Hz).
   float amplitude_;
   KeyingMode keying_mode_;
   bool initialized_;

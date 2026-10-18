@@ -130,7 +130,6 @@ class ST7032 {
 
  private:
   i2c_master_dev_handle_t dev_handle_;
-  uint8_t i2c_address_;
 
   uint8_t display_function_;
   uint8_t display_control_;

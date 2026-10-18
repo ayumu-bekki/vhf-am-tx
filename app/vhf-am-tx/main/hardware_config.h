@@ -77,16 +77,15 @@ constexpr uint32_t kPwmBits = 8;
 constexpr uint32_t kPwmFullScale = 1u << kPwmBits;  // 256
 
 // ---- Modulator circuit (design chapters 03/04). Everything below is derived
-// from these; change R9 here and nothing else. ------------------------------
+// from these; change R5/R8 here and nothing else. ---------------------------
 constexpr float kVddPwm = 3.3f;           // PWM high level [V]
-constexpr float kModR8 = 10.0e3f;         // M3 feedback, FB -> GND
-constexpr float kModR9 = 22.0e3f;         // M3 feedback, FB -> source
-                                          // (20k -> 22k, ADR-024)
+constexpr float kModR5 = 10.0e3f;         // feedback, FB -> GND (schematic R5)
+constexpr float kModR8 = 22.0e3f;         // feedback, FB -> source (schematic R8, ADR-024)
 constexpr float kVDrainCarrier = 3.6f;    // carrier point (1.5W)
 constexpr float kVDrainHardLimit = 7.75f; // margin under the 8V rail's 7.85V
 
-// Drain voltage = M2 output * kModGain.
-constexpr float kModGain = 1.0f + kModR9 / kModR8;  // 3.2
+// Drain voltage = M2 output * kModGain. Change only R5/R8 above if the resistors change.
+constexpr float kModGain = 1.0f + kModR8 / kModR5;  // 3.2
 
 // Duty mapping (spec 2.2): D = kModK * (1 + x), nominal kModK = 0.34091.
 constexpr float kModKNom = kVDrainCarrier / (kModGain * kVddPwm);

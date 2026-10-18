@@ -136,7 +136,7 @@ bool Modulator::Initialize() {
   ESP_LOGI(kTag, "LEDC ready: %u Hz, %u bit, GPIO%d, CPU %u MHz",
            hardware_config::kPwmHz, hardware_config::kPwmBits,
            hardware_config::kPwmPin, g_cpu_mhz);
-  // One line that tells a build for the old modulator (R9 20k: gain 3.00,
+  // One line that tells a build for the old modulator (R8 20k: gain 3.00,
   // carrier 93) from this one at a glance.
   ESP_LOGI(kTag, "MOD_GAIN=%.2f K=%.5f carrier=%u hard_max=%u",
            static_cast<double>(hardware_config::kModGain),
@@ -328,7 +328,6 @@ IsrStats Modulator::GetStats() const {
   const uint32_t mhz = g_cpu_mhz > 0 ? g_cpu_mhz : 1;
   stats.max_us = stat_max_cycles_.load(std::memory_order_relaxed) / mhz;
   stats.avg_us = stat_avg_cycles_.load(std::memory_order_relaxed) / mhz;
-  stats.tick_count = tick_count_.load(std::memory_order_relaxed);
   return stats;
 }
 

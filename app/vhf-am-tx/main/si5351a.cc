@@ -22,7 +22,6 @@ constexpr int kProbeTimeoutMs = 100;
 
 Si5351A::Si5351A()
     : dev_handle_(nullptr),
-      i2c_address_(0),
       clk_output_status_(0),
       carrier_enabled_(false),
       frequency_set_(false),
@@ -38,7 +37,6 @@ Si5351A::~Si5351A() {
 
 bool Si5351A::Setup(const uint8_t address) {
   std::lock_guard<std::mutex> lock(mutex_);
-  i2c_address_ = address;
 
   // Get the I2C bus handle
   i2c_master_bus_handle_t bus_handle = i2c_util::GetBusHandle();
