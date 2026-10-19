@@ -26,9 +26,8 @@ menu "AM Transmitter"
         bool "Enable the CW mode"
         default y
         help
-            The CW mode is a hand key: the signal is on the air while SW1 is
-            held. SW2 switches between A2A (keyed tone on a steady carrier)
-            and A1A (keyed carrier).
+            The CW mode is an A1A hand key: the signal is on the air while SW1
+            is held. The carrier is keyed (no steady carrier).
 
     config AM_TX_DEBUG_MODES
         bool "Enable the debug test modes (D:DUTY, D:CARR, D:TONE, D:DOT, D:BRST)"

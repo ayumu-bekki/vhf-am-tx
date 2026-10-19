@@ -26,8 +26,7 @@ TransmitterSettings::TransmitterSettings()
       callsign_{},  // unset until loaded or entered
       ardf_id_(static_cast<morse::ArdfId>(hardware_config::kArdfIdDefault)),
       cw_wpm_(hardware_config::kCwWpmDefault),
-      power_(hardware_config::kPowerDefault),
-      emission_(Emission::kA2a) {}
+      power_(hardware_config::kPowerDefault) {}
 
 TransmitterSettings::~TransmitterSettings() {
   if (writer_task_) {
@@ -78,13 +77,11 @@ bool TransmitterSettings::Load() {
   uint8_t ardf_id = static_cast<uint8_t>(ardf_id_);
   uint8_t wpm = cw_wpm_;
   uint8_t power = power_;
-  uint8_t emission = static_cast<uint8_t>(emission_);
 
   nvs_get_u32(read_handle, kKeyFrequency, &freq);
   nvs_get_u8(read_handle, kKeyArdfId, &ardf_id);
   nvs_get_u8(read_handle, kKeyCwWpm, &wpm);
   nvs_get_u8(read_handle, kKeyPower, &power);
-  nvs_get_u8(read_handle, kKeyEmission, &emission);
 
   // Say where the callsign came from: a title screen without one is
   // otherwise indistinguishable from a failed read.
@@ -124,7 +121,6 @@ bool TransmitterSettings::Load() {
 
   power_ = power < hardware_config::kPowerCount ? power
                                                : hardware_config::kPowerDefault;
-  emission_ = SanitizeEmission(emission);
 
   ESP_LOGI(kTag,
            "Settings loaded: freq=%u call=%s ardf=%u wpm=%u", frequency_hz_, callsign_, static_cast<uint8_t>(ardf_id_), cw_wpm_);
@@ -138,6 +134,9 @@ bool TransmitterSettings::Load() {
     bool erased = false;
     if (nvs_erase_key(nvs_handle_, kKeyLegacyDutyCarrier) == ESP_OK) {
       ESP_LOGW(kTag, "Erased stale stored carrier duty");
+      erased = true;
+    }
+    if (nvs_erase_key(nvs_handle_, kKeyLegacyEmission) == ESP_OK) {
       erased = true;
     }
     // The operating mode is no longer stored; the unit always starts in VOICE.
@@ -232,7 +231,6 @@ bool TransmitterSettings::Commit() {
   uint8_t ardf_id;
   uint8_t cw_wpm;
   uint8_t power;
-  uint8_t emission;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     frequency_hz = frequency_hz_;
@@ -240,7 +238,6 @@ bool TransmitterSettings::Commit() {
     ardf_id = static_cast<uint8_t>(ardf_id_);
     cw_wpm = cw_wpm_;
     power = power_;
-    emission = static_cast<uint8_t>(emission_);
     dirty_.store(false);
   }
 
@@ -253,7 +250,6 @@ bool TransmitterSettings::Commit() {
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyArdfId, ardf_id);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyCwWpm, cw_wpm);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyPower, power);
-  if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyEmission, emission);
   if (err == ESP_OK) err = nvs_commit(nvs_handle_);
 
   if (err != ESP_OK) {
@@ -340,15 +336,6 @@ void TransmitterSettings::SetPower(uint8_t power) {
     return;
   }
   power_ = power;
-  MarkDirty();
-}
-
-void TransmitterSettings::SetEmission(Emission emission) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (emission >= Emission::kCount || emission_ == emission) {
-    return;
-  }
-  emission_ = emission;
   MarkDirty();
 }
 

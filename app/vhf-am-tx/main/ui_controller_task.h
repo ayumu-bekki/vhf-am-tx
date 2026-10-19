@@ -32,7 +32,7 @@ namespace transmitter_system {
 /// so they have to be reachable from the buttons alone.
 enum class UiMode : uint8_t {
   kVoice = 0,    // A3E, FN+ is the PTT
-  kCw,           // hand key: on the air while SW1 is held; SW2 = A2A/A1A
+  kCw,           // A1A hand key: on the air while SW1 is held
   kArdf,         // A2A, FN+ toggles the run
   kFrequency,    // +-20kHz
   kPower,        // output stage 1.5W / 500mW / 100mW
@@ -98,7 +98,6 @@ class UiControllerTask final : public Task {
   void IncrementCallsignChar();
 
   void AdjustPower(int direction);
-  void ToggleEmission();
   void ApplyTxSettings();
   void UpdateArdfStopHold();
   void UpdateDot();

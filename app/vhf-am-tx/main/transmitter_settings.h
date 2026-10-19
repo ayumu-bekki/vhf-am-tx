@@ -76,10 +76,6 @@ class TransmitterSettings final {
   uint8_t GetPower() const { return power_; }
   void SetPower(uint8_t power);
 
-  /// Class of emission for the ARDF and CW modes (key "emission").
-  Emission GetEmission() const { return emission_; }
-  void SetEmission(Emission emission);
-
  private:
   bool OpenNvsHandle();
   void CloseNvsHandle();
@@ -109,7 +105,6 @@ class TransmitterSettings final {
   morse::ArdfId ardf_id_;
   uint8_t cw_wpm_;
   uint8_t power_;
-  Emission emission_;
 
   static constexpr const char* kNvsNamespace = "amtx";
   static constexpr const char* kKeyLegacyMode = "mode";
@@ -118,12 +113,13 @@ class TransmitterSettings final {
   static constexpr const char* kKeyArdfId = "ardf_id";
   static constexpr const char* kKeyCwWpm = "cw_wpm";
   static constexpr const char* kKeyPower = "power";
-  static constexpr const char* kKeyEmission = "emission";
   // Written by firmware that stored the calibrated carrier duty. The duty is
   // fixed by the modulator circuit (hardware_config.h) and never persisted
   // now; a stale value read back from an older board would put the wrong
   // voltage on the drain. Erased at start-up.
   static constexpr const char* kKeyLegacyDutyCarrier = "duty_car";
+  // The CW mode used to switch A2A / A1A; it is A1A only now.
+  static constexpr const char* kKeyLegacyEmission = "emission";
 };
 
 }  // namespace transmitter_system

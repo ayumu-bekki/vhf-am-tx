@@ -363,10 +363,6 @@ void UiControllerTask::OnFnPlusRelease() {
 
 void UiControllerTask::OnFnMinusPress() {
   switch (mode_) {
-    case UiMode::kCw:
-      ToggleEmission();  // SW2: A2A <-> A1A, ignored while running
-      break;
-
     case UiMode::kFrequency:
       AdjustFrequency(-1);
       break;
@@ -625,26 +621,13 @@ void UiControllerTask::AdjustPower(int direction) {
   ApplyTxSettings();
 }
 
-void UiControllerTask::ToggleEmission() {
-  Emission emission = settings_.GetEmission();
-  if (TryToggleEmission(&emission, tx_.IsTransmitting())) {
-    settings_.SetEmission(emission);
-    ApplyTxSettings();
-  }
-}
-
 /// Hands the stage and the emission of the current mode to the TX controller,
 /// which latches them when the next transmission starts. ARDF and everything
 /// but the CW mode are A2A; D:DOT is A1A; the D:CARR levels other than S run
 /// at 1.5W whatever the stage is (calibration reference).
 void UiControllerTask::ApplyTxSettings() {
-  Emission emission = Emission::kA2a;
-  if (mode_ == UiMode::kCw) {
-    emission = settings_.GetEmission();
-  } else if (mode_ == UiMode::kTestDot) {
-    emission = Emission::kA1a;
-  }
-  tx_.SetEmission(emission);
+  const bool a1a = mode_ == UiMode::kCw || mode_ == UiMode::kTestDot;
+  tx_.SetEmission(a1a ? Emission::kA1a : Emission::kA2a);
   tx_.SetManualKeying(mode_ == UiMode::kCw);
 
   const bool fixed_full =
@@ -800,16 +783,9 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       std::snprintf(out, size, "VOICE%s", tx_.IsTransmitting() ? " TX" : "");
       break;
 
-    case UiMode::kCw: {
-      const char* const emission =
-          settings_.GetEmission() == Emission::kA1a ? "A1A" : "A2A";
-      if (tx_.IsTransmitting()) {
-        std::snprintf(out, size, "CW %s TX", emission);
-      } else {
-        std::snprintf(out, size, "CW %s", emission);
-      }
+    case UiMode::kCw:
+      std::snprintf(out, size, "CW A1A%s", tx_.IsTransmitting() ? " TX" : "");
       break;
-    }
 
     case UiMode::kArdf: {
       const char* id_text = morse::GetArdfIdText(settings_.GetArdfId());

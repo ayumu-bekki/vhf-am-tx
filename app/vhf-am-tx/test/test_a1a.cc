@@ -1,4 +1,4 @@
-// Host test: A1A keying (spec 5.3 / 10.3) and the SW2 emission toggle.
+// Host test: A1A keying (spec 5.3 / 10.3) and the CW mode hand key.
 //
 // The keyer is driven one 25kHz tick at a time, like the ISR does. The CLK0
 // requests it raises are logged with the tick they came on, so the 1ms lead
@@ -207,7 +207,7 @@ int main() {
   }
 
   printf("\n--- A5: CW mode hand key, sequencing ---\n");
-  for (int a1a = 1; a1a >= 0; --a1a) {
+  for (int a1a = 1; a1a >= 1; --a1a) {
     Modulator mod; Si5351A syn; ToneGenerator tone; CwKeyer keyer; TxController tx;
     tone.Initialize();
     keyer.SetToneGenerator(&tone);
@@ -265,7 +265,7 @@ int main() {
   }
 
   printf("\n--- A5: CW mode hand key, sequencing ---\n");
-  for (int a1a = 1; a1a >= 0; --a1a) {
+  for (int a1a = 1; a1a >= 1; --a1a) {
     Modulator mod; Si5351A syn; ToneGenerator tone; CwKeyer keyer; TxController tx;
     tone.Initialize();
     keyer.SetToneGenerator(&tone);
@@ -297,16 +297,6 @@ int main() {
     for (int i = 0; i < 100; ++i) { g_fake_time_us += 1000; tx.Tick(); }
     Check(tx.GetState() == TxState::kIdle, "SW1 released: stopped (ramp down, settle, carrier off)");
     Check(g_trace.back() == "carrier:OFF", "CLK0 stopped last");
-  }
-
-  printf("\n--- A4: SW2 while running ---\n");
-  {
-    Emission e = Emission::kA2a;
-    Check(!TryToggleEmission(&e, true) && e == Emission::kA2a, "ignored while running");
-    Check(TryToggleEmission(&e, false) && e == Emission::kA1a, "A2A -> A1A when idle");
-    Check(TryToggleEmission(&e, false) && e == Emission::kA2a, "A1A -> A2A when idle");
-    e = Emission::kA1a;
-    Check(!TryToggleEmission(&e, true) && e == Emission::kA1a, "A1A kept while running");
   }
 
   printf("\n===== %s (%d failure%s) =====\n", g_fail ? "FAILURES" : "ALL PASS",

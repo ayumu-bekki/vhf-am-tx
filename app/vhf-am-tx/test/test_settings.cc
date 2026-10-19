@@ -138,7 +138,7 @@ int main() {
     check(!none.HasCallsign(), "nothing saved leaves it unset");
   }
 
-  printf("\n--- power / emission: stored values, out-of-range falls back (P5) ---\n");
+  printf("\n--- power: stored value, out-of-range falls back (P5) ---\n");
   {
     auto put = [](const char* k, const char* v) {
       std::lock_guard<std::mutex> l(g_nvs.m);
@@ -148,24 +148,19 @@ int main() {
       TransmitterSettings s;
       s.Load();
       check(s.GetPower() == hardware_config::kPowerDefault, "no key: power default");
-      check(s.GetEmission() == Emission::kA2a, "no key: emission A2A");
     }
     put("power", "2");
-    put("emission", "1");
     {
       TransmitterSettings s;
       s.Load();
-      check(s.GetPower() == 2 && s.GetEmission() == Emission::kA1a,
-            "valid values are restored");
+      check(s.GetPower() == 2, "valid value is restored");
     }
     put("power", "3");
-    put("emission", "2");
     put("mode", "9");
     {
       TransmitterSettings s;
       s.Load();
       check(s.GetPower() == hardware_config::kPowerDefault, "power 3 -> default");
-      check(s.GetEmission() == Emission::kA2a, "emission 2 -> A2A");
       check(g_nvs.kv.count("mode") == 0, "old mode key is erased, never restored");
     }
     put("power", "255");
@@ -176,10 +171,8 @@ int main() {
       s.SetPower(7);
       check(s.GetPower() == hardware_config::kPowerDefault, "SetPower(7) refused");
       s.SetPower(1);
-      s.SetEmission(Emission::kA1a);
       s.Tick(true);
-      check(g_nvs.kv["power"] == "1" && g_nvs.kv["emission"] == "1",
-            "changes are written under power / emission");
+      check(g_nvs.kv["power"] == "1", "change is written under power");
     }
   }
 
