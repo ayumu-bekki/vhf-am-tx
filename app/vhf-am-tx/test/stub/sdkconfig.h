@@ -3,4 +3,6 @@
 // Host-test stand-in for the generated sdkconfig.h. Only the options that
 // hardware_config.h reads are defined.
 #define CONFIG_AM_TX_BATTERY_INHIBIT 1
+#define CONFIG_AM_TX_ARDF_MODE 1
+#define CONFIG_AM_TX_CW_MODE 1
 #endif

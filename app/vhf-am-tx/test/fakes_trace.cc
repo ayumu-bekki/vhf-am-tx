@@ -25,12 +25,15 @@ Modulator::~Modulator() {}
 void Modulator::StartRampUp()   { g_trace.push_back("duty:ramp_up");   ramp_active_.store(false); }
 void Modulator::StartRampDown() { g_trace.push_back("duty:ramp_down"); ramp_active_.store(false); }
 
+void Modulator::SnapRampFull()  { g_trace.push_back("duty:snap_full"); ramp_active_.store(false); }
+
 Si5351A::Si5351A()
     : dev_handle_(nullptr), clk_output_status_(0),
       carrier_enabled_(false), frequency_set_(true),
       current_freq_hz_(144920000), carrier_clk_(Clk::kClk0) {}
 Si5351A::~Si5351A() {}
 
+bool Si5351A::CarrierOutput(bool on) { g_trace.push_back(on ? "carrier_out:ON" : "carrier_out:OFF"); return true; }
 bool Si5351A::CarrierEnable()  { g_trace.push_back("carrier:ON");  carrier_enabled_=true;  return true; }
 bool Si5351A::CarrierDisable() { g_trace.push_back("carrier:OFF"); carrier_enabled_=false; return true; }
 

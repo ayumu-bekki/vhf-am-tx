@@ -21,6 +21,9 @@ Modulator::~Modulator() {}
 void Modulator::StartRampUp()  { ramp_active_.store(false); }
 void Modulator::StartRampDown(){ ramp_active_.store(false); }
 
+void Modulator::SnapRampFull()  { ramp_active_.store(false); }
+
+bool Si5351A::CarrierOutput(bool) { return true; }
 bool Si5351A::CarrierEnable()  { carrier_enabled_ = true;  return true; }
 bool Si5351A::CarrierDisable() { carrier_enabled_ = false; return true; }
 

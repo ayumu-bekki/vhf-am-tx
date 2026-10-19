@@ -210,6 +210,10 @@ void Modulator::StartRampDown() {
   ramp_active_.store(true, std::memory_order_release);
 }
 
+void Modulator::SnapRampFull() {
+  ramp_request_.store(2, std::memory_order_release);
+}
+
 bool Modulator::TimerCallback(gptimer_handle_t timer,
                               const gptimer_alarm_event_data_t* data,
                               void* user_data) {
@@ -224,7 +228,11 @@ void Modulator::Tick() {
 
   // --- Ramp handling (spec 8.2 / 8.3) -------------------------------------
   const int8_t request = ramp_request_.exchange(0, std::memory_order_acq_rel);
-  if (request != 0) {
+  if (request == 2) {
+    ramp_direction_ = 0;
+    ramp_scale_ = 1.0f;
+    ramp_active_.store(false, std::memory_order_release);
+  } else if (request != 0) {
     ramp_direction_ = request;
     ramp_index_ = 0;
   }
@@ -299,7 +307,8 @@ void Modulator::Tick() {
     if (ramp_scale_ < 1.0f) {
       x = ramp_scale_ * (1.0f + x) - 1.0f;
     }
-    duty = modulation_map::XToDuty(x, &dither_);
+    duty = modulation_map::XToDuty(
+        x, &dither_, power_scale_.load(std::memory_order_relaxed));
   }
 
   // Whatever got here, the ceiling applies. XToDuty() and SetFixedDuty()

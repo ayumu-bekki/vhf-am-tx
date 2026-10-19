@@ -118,6 +118,42 @@ int main() {
     Check(peak == 181, "T14 a 0..400 duty sweep never exceeds 181");
   }
 
+  printf("\n--- output stages (P1-P4) ---\n");
+  {
+    using hardware_config::CarrierDuty;
+    using hardware_config::PowerFactor;
+    Check(CarrierDuty(0) == 84 && CarrierDuty(1) == 49 && CarrierDuty(2) == 22,
+          "P1 carrier duty 84 / 49 / 22 (1.5W / 500mW / 100mW)");
+    Check(XToDuty(0.0f, nullptr, PowerFactor(1)) == 49 &&
+              XToDuty(0.0f, nullptr, PowerFactor(2)) == 22,
+          "P1 XToDuty(0, s) agrees with CarrierDuty");
+
+    bool in_range = true, monotonic = true;
+    for (uint8_t i = 0; i < hardware_config::kPowerCount; ++i) {
+      uint32_t prev = 0;
+      for (int k = -2000; k <= 3000; ++k) {
+        const uint32_t d = XToDuty(k * 0.001f, nullptr, PowerFactor(i));
+        if (d > kDutyLimit) in_range = false;
+        if (d < prev) monotonic = false;
+        prev = d;
+      }
+    }
+    Check(in_range, "P2 every stage, x in [-2, +3]: duty within 0..kDutyLimit");
+    Check(monotonic, "P2 every stage: non-decreasing in x");
+
+    const uint32_t lo = XToDuty(-0.8f, nullptr, PowerFactor(2));
+    const uint32_t hi = XToDuty(0.8f, nullptr, PowerFactor(2));
+    char buf[80];
+    snprintf(buf, sizeof(buf), "P3 100mW x=-0.8/+0.8 -> %u/%u (want ~4/~39)", lo, hi);
+    Check(lo == 4 && hi == 39, buf);
+
+    bool capped = true;
+    for (int k = -2000; k <= 3000; ++k) {
+      if (XToDuty(k * 0.001f, nullptr, 1.1f) > kDutyLimit) capped = false;
+    }
+    Check(capped, "P4 trim 1.1 on the 1.5W stage never exceeds kDutyLimit");
+  }
+
   printf("\n===== %s (%d failure%s) =====\n", g_fail ? "FAILURES" : "ALL PASS",
          g_fail, g_fail == 1 ? "" : "s");
   return g_fail != 0;

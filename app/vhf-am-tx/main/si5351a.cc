@@ -122,6 +122,24 @@ bool Si5351A::CarrierEnable() {
   return true;
 }
 
+bool Si5351A::CarrierOutput(bool on) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!dev_handle_ || !carrier_enabled_) {
+    return false;
+  }
+  const uint8_t clk_bit = 1 << static_cast<uint8_t>(carrier_clk_);
+  const uint8_t next = on ? static_cast<uint8_t>(clk_output_status_ & ~clk_bit)
+                          : static_cast<uint8_t>(clk_output_status_ | clk_bit);
+  if (next == clk_output_status_) {
+    return true;
+  }
+  if (!Write(kRegOutputCtrl, next)) {
+    return false;
+  }
+  clk_output_status_ = next;
+  return true;
+}
+
 bool Si5351A::CarrierDisable() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!dev_handle_) {

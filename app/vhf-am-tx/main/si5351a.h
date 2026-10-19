@@ -131,6 +131,11 @@ class Si5351A {
   /// been ramped down and the drain has settled, never before.
   bool CarrierDisable();
 
+  /// Switches only the CLK0 output on or off, leaving the PLL running (A1A,
+  /// spec 10.3): one I2C write, no lock wait. No-op unless the carrier has
+  /// been enabled by CarrierEnable().
+  bool CarrierOutput(bool on);
+
   bool IsReady() const { return dev_handle_ != nullptr; }
 
  private:

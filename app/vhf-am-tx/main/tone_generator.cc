@@ -72,6 +72,10 @@ float ToneGenerator::Next() {
 
   const float envelope = envelope_table_[envelope_index_];
 
+  if (keying_mode_ == KeyingMode::kA1a) {
+    return envelope - 1.0f;
+  }
+
   if (keying_mode_ == KeyingMode::kCarrierKeying) {
     // Pull x down to -1 (duty 0) on key up, ramping through the same
     // envelope so the edges stay soft: x = -1 at envelope 0, x = tone at 1.

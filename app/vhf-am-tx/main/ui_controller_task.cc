@@ -40,6 +40,17 @@ constexpr char kCallsignUnsetChar = '-';
 /// (frequency write, display refresh, D:BRST) can run.
 constexpr uint32_t kQueueTimeoutMs = 50;
 
+/// LCD text of the output stages (spec 9.5): "PWR 1.5W" / "PWR500mW" /
+/// "PWR100mW"; the same five characters alternate with the battery voltage.
+const char* const kPowerText[hardware_config::kPowerCount] = {
+    " 1.5W", "500mW", "100mW"};
+
+/// Alternation period of the battery / output stage readout while idle.
+constexpr int64_t kReadoutSwapMs = 2000;
+
+/// D:DOT sends this over and over: 24 dits.
+constexpr const char* kDotText = "EEEEEEEEEEEEEEEEEEEEEEEE";
+
 /// Finds the prefix index for the first two characters, or -1 if unknown
 /// (so the next press lands on the first prefix).
 int FindPrefixIndex(const char* callsign) {
@@ -53,7 +64,8 @@ int FindPrefixIndex(const char* callsign) {
 
 bool IsTestMode(UiMode mode) {
   return mode == UiMode::kTestDuty || mode == UiMode::kTestCarrier ||
-         mode == UiMode::kTestTone || mode == UiMode::kTestBurst;
+         mode == UiMode::kTestTone || mode == UiMode::kTestDot ||
+         mode == UiMode::kTestBurst;
 }
 
 /// "M23A11" - ISR max and average in microseconds, with a '!' in front when
@@ -70,7 +82,8 @@ void FormatIsrStats(const IsrStats& stats, char* out, size_t size) {
 
 UiControllerTask::UiControllerTask(ST7032& lcd, TransmitterSettings& settings,
                                    TxController& tx, ArdfScheduler& ardf,
-                                   Modulator& modulator, Si5351A& si5351a)
+                                   Modulator& modulator, Si5351A& si5351a,
+                                   CwKeyer& keyer)
     : Task(kTaskName, kPriority, kCoreId),
       lcd_(lcd),
       settings_(settings),
@@ -78,6 +91,7 @@ UiControllerTask::UiControllerTask(ST7032& lcd, TransmitterSettings& settings,
       ardf_(ardf),
       modulator_(modulator),
       si5351a_(si5351a),
+      keyer_(keyer),
       mode_(UiMode::kVoice),
       pending_frequency_hz_(hardware_config::kFreqDefaultHz),
       frequency_change_ms_(0),
@@ -118,6 +132,7 @@ void UiControllerTask::Initialize() {
   // Program the synthesiser once at startup. The output stays disabled; the
   // transmit sequence decides when the carrier appears.
   si5351a_.SetFrequency(Si5351A::Clk::kClk0, pending_frequency_hz_);
+  ApplyTxSettings();
 
   // Title screen for a moment; a button press dismisses it.
   splash_until_ms_ = NowMs() + hardware_config::kBootTitleMs;
@@ -135,6 +150,7 @@ void UiControllerTask::Update() {
   ApplyPendingFrequency(/*force=*/false);
   UpdateCarrierPeakTimeout();
   UpdateBurst();
+  UpdateDot();
   settings_.Tick();
 
   const int64_t now = NowMs();
@@ -182,6 +198,39 @@ void UiControllerTask::DispatchEvent(const ButtonEvent& event) {
   }
 }
 
+/// Modes left out by menuconfig (ARDF, CW, test modes) are skipped by
+/// SW_MODE. Without ARDF the ID and WPM modes go with it; the callsign editor
+/// always stays.
+bool UiControllerTask::IsModeEnabled(UiMode mode) {
+  switch (mode) {
+    case UiMode::kArdf:
+    case UiMode::kIdent:
+    case UiMode::kWpm:
+      return hardware_config::kArdfModeEnabled;
+    case UiMode::kCw:
+      return hardware_config::kCwModeEnabled;
+    case UiMode::kTestDuty:
+    case UiMode::kTestCarrier:
+    case UiMode::kTestTone:
+    case UiMode::kTestDot:
+    case UiMode::kTestBurst:
+      return hardware_config::kDebugModesEnabled;
+    default:
+      return true;
+  }
+}
+
+UiMode UiControllerTask::NextMode(UiMode mode) {
+  uint8_t next = static_cast<uint8_t>(mode);
+  for (uint8_t i = 0; i < static_cast<uint8_t>(UiMode::kCount); ++i) {
+    next = (next + 1) % static_cast<uint8_t>(UiMode::kCount);
+    if (IsModeEnabled(static_cast<UiMode>(next))) {
+      return static_cast<UiMode>(next);
+    }
+  }
+  return UiMode::kVoice;
+}
+
 bool UiControllerTask::IsModeSwitchAllowed() const {
   // Transmitting, or an ARDF run in progress even during a silent slot
   // (spec 9.3). The run flag is what matters, not whether the carrier
@@ -201,15 +250,7 @@ void UiControllerTask::OnModePress() {
 
   LeaveMode(mode_);
 
-  uint8_t next =
-      (static_cast<uint8_t>(mode_) + 1) % static_cast<uint8_t>(UiMode::kCount);
-  // The test modes are a debug feature: without the menuconfig option the
-  // cycle wraps straight back to the first mode.
-  if (!hardware_config::kDebugModesEnabled &&
-      next >= static_cast<uint8_t>(UiMode::kTestDuty)) {
-    next = 0;
-  }
-  mode_ = static_cast<UiMode>(next);
+  mode_ = NextMode(mode_);
 
   EnterMode(mode_);
 
@@ -236,8 +277,19 @@ void UiControllerTask::OnFnPlusPress() {
       }
       break;
 
+    case UiMode::kCw:
+      // Hand key: on the air for as long as SW1 is held, like the voice PTT.
+      if (tx_.RequestStart()) {
+        tx_.SetKeyed(true);
+      }
+      break;
+
     case UiMode::kFrequency:
       AdjustFrequency(+1);
+      break;
+
+    case UiMode::kPower:
+      AdjustPower(-1);  // up: towards 1.5W (index 0)
       break;
 
     case UiMode::kCallsign:
@@ -258,6 +310,7 @@ void UiControllerTask::OnFnPlusPress() {
 
     case UiMode::kTestCarrier:
     case UiMode::kTestTone:
+    case UiMode::kTestDot:
       // Toggle the carrier through the normal start/stop sequence, so the
       // ordering rules of spec 8.2 / 8.3 apply here too.
       if (test_output_on_) {
@@ -266,11 +319,14 @@ void UiControllerTask::OnFnPlusPress() {
       }
       tx_.SetKeyedSource(mode_ == UiMode::kTestTone
                              ? ModulationSource::kContinuousTone
+                         : mode_ == UiMode::kTestDot
+                             ? ModulationSource::kCwKeyer
                              : ModulationSource::kSilent);
+      ApplyTxSettings();
       if (tx_.RequestStart()) {
         test_output_on_ = true;
         carrier_on_ms_ = NowMs();
-        if (mode_ == UiMode::kTestTone) {
+        if (mode_ == UiMode::kTestTone || mode_ == UiMode::kTestDot) {
           tx_.SetKeyed(true);
         }
       }
@@ -295,7 +351,7 @@ void UiControllerTask::OnFnPlusPress() {
 }
 
 void UiControllerTask::OnFnPlusRelease() {
-  if (mode_ == UiMode::kVoice) {
+  if (mode_ == UiMode::kVoice || mode_ == UiMode::kCw) {
     tx_.SetKeyed(false);
     tx_.RequestStop();
     UpdateDisplay();
@@ -304,8 +360,16 @@ void UiControllerTask::OnFnPlusRelease() {
 
 void UiControllerTask::OnFnMinusPress() {
   switch (mode_) {
+    case UiMode::kCw:
+      ToggleEmission();  // SW2: A2A <-> A1A, ignored while running
+      break;
+
     case UiMode::kFrequency:
       AdjustFrequency(-1);
+      break;
+
+    case UiMode::kPower:
+      AdjustPower(+1);  // down: towards 100mW
       break;
 
     case UiMode::kCallsign:
@@ -330,8 +394,9 @@ void UiControllerTask::OnFnMinusPress() {
       if (!test_output_on_ && !tx_.IsTransmitting()) {
         carrier_level_ = static_cast<CarrierLevel>(
             (static_cast<uint8_t>(carrier_level_) + 1) %
-            static_cast<uint8_t>(CarrierLevel::kCount));  // L -> H -> P -> L
+            static_cast<uint8_t>(CarrierLevel::kCount));  // L -> H -> P -> S -> L
         modulator_.SetCarrierLevel(CarrierLevelValue());
+        ApplyTxSettings();
       }
       break;
 
@@ -347,6 +412,7 @@ void UiControllerTask::OnFnRepeat(ButtonEvent::Button button) {
   // ARDF run toggle are single shot (spec 9.7).
   switch (mode_) {
     case UiMode::kFrequency:
+    case UiMode::kPower:
     case UiMode::kCallsign:
     case UiMode::kIdent:
     case UiMode::kWpm:
@@ -376,6 +442,10 @@ void UiControllerTask::EnterMode(UiMode mode) {
       tx_.SetKeyedSource(ModulationSource::kCwKeyer);
       break;
 
+    case UiMode::kCw:
+      tx_.SetKeyedSource(ModulationSource::kCwKeyer);
+      break;
+
     case UiMode::kCallsign:
       callsign_cursor_ = 0;
       lcd_.SetCursorVisible(true, true);
@@ -400,6 +470,7 @@ void UiControllerTask::EnterMode(UiMode mode) {
       break;
 
     case UiMode::kTestTone:
+    case UiMode::kTestDot:
     case UiMode::kTestBurst:
       test_output_on_ = false;
       burst_tx_active_ = false;
@@ -408,6 +479,7 @@ void UiControllerTask::EnterMode(UiMode mode) {
     default:
       break;
   }
+  ApplyTxSettings();
 }
 
 void UiControllerTask::LeaveMode(UiMode mode) {
@@ -443,7 +515,11 @@ void UiControllerTask::LeaveMode(UiMode mode) {
 
     case UiMode::kTestCarrier:
     case UiMode::kTestTone:
+    case UiMode::kTestDot:
     case UiMode::kTestBurst:
+      if (mode == UiMode::kTestDot) {
+        keyer_.Stop();
+      }
       if (tx_.IsTransmitting()) {
         tx_.RequestStop();
       }
@@ -536,6 +612,43 @@ void UiControllerTask::IncrementCallsignChar() {
   }
 }
 
+void UiControllerTask::AdjustPower(int direction) {
+  // Clamp rather than wrap: a long press stops at 1.5W / 100mW (spec 9.2).
+  const int next = static_cast<int>(settings_.GetPower()) + direction;
+  if (next < 0 || next >= hardware_config::kPowerCount) {
+    return;
+  }
+  settings_.SetPower(static_cast<uint8_t>(next));
+  ApplyTxSettings();
+}
+
+void UiControllerTask::ToggleEmission() {
+  Emission emission = settings_.GetEmission();
+  if (TryToggleEmission(&emission, tx_.IsTransmitting())) {
+    settings_.SetEmission(emission);
+    ApplyTxSettings();
+  }
+}
+
+/// Hands the stage and the emission of the current mode to the TX controller,
+/// which latches them when the next transmission starts. ARDF and everything
+/// but the CW mode are A2A; D:DOT is A1A; the D:CARR levels other than S run
+/// at 1.5W whatever the stage is (calibration reference).
+void UiControllerTask::ApplyTxSettings() {
+  Emission emission = Emission::kA2a;
+  if (mode_ == UiMode::kCw) {
+    emission = settings_.GetEmission();
+  } else if (mode_ == UiMode::kTestDot) {
+    emission = Emission::kA1a;
+  }
+  tx_.SetEmission(emission);
+  tx_.SetManualKeying(mode_ == UiMode::kCw);
+
+  const bool fixed_full =
+      mode_ == UiMode::kTestCarrier && carrier_level_ != CarrierLevel::kStage;
+  tx_.SetPowerIndex(fixed_full ? 0 : settings_.GetPower());
+}
+
 void UiControllerTask::AdjustIdent(int direction) {
   const int count = static_cast<int>(morse::ArdfId::kCount);
   const int index =
@@ -576,13 +689,17 @@ void UiControllerTask::AdjustTestDuty(int direction) {
 
 float UiControllerTask::CarrierLevelValue() const {
   switch (carrier_level_) {
-    case CarrierLevel::kHigh: return 1.0f;
+    case CarrierLevel::kHigh:
+    case CarrierLevel::kStage: return 1.0f;
     case CarrierLevel::kPeak: return hardware_config::kCarrierPeakFactor;
     default: return 0.5f;
   }
 }
 
 void UiControllerTask::StopTestOutput() {
+  if (mode_ == UiMode::kTestDot) {
+    keyer_.Stop();
+  }
   tx_.SetKeyed(false);
   tx_.RequestStop();
   test_output_on_ = false;
@@ -597,6 +714,18 @@ void UiControllerTask::UpdateCarrierPeakTimeout() {
       (NowMs() - carrier_on_ms_) >= hardware_config::kCarrierPeakMaxMs) {
     StopTestOutput();
     UpdateDisplay();
+  }
+}
+
+// D:DOT: keep the keyer fed with dits while the carrier is up.
+void UiControllerTask::UpdateDot() {
+  if (mode_ != UiMode::kTestDot || !test_output_on_) {
+    return;
+  }
+  const TxState state = tx_.GetState();
+  if ((state == TxState::kTxReady || state == TxState::kTxKeyed) &&
+      !keyer_.IsBusy()) {
+    keyer_.Send(kDotText);
   }
 }
 
@@ -651,6 +780,17 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       std::snprintf(out, size, "VOICE%s", tx_.IsTransmitting() ? " TX" : "");
       break;
 
+    case UiMode::kCw: {
+      const char* const emission =
+          settings_.GetEmission() == Emission::kA1a ? "A1A" : "A2A";
+      if (tx_.IsTransmitting()) {
+        std::snprintf(out, size, "CW %s TX", emission);
+      } else {
+        std::snprintf(out, size, "CW %s", emission);
+      }
+      break;
+    }
+
     case UiMode::kArdf: {
       const char* id_text = morse::GetArdfIdText(settings_.GetArdfId());
       if (!ardf_.HasCallsign()) {
@@ -669,6 +809,10 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
 
     case UiMode::kFrequency:
       std::snprintf(out, size, "FREQ");
+      break;
+
+    case UiMode::kPower:
+      std::snprintf(out, size, "PWR%s", kPowerText[settings_.GetPower()]);
       break;
 
     case UiMode::kCallsign:
@@ -693,11 +837,15 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
 
     case UiMode::kTestCarrier:
       std::snprintf(out, size, "D:CARR %c %s",
-                    "LHP"[static_cast<uint8_t>(carrier_level_)], on_off);
+                    "LHPS"[static_cast<uint8_t>(carrier_level_)], on_off);
       break;
 
     case UiMode::kTestTone:
       std::snprintf(out, size, "D:TONE %s", on_off);
+      break;
+
+    case UiMode::kTestDot:
+      std::snprintf(out, size, "D:DOT %s", on_off);
       break;
 
     case UiMode::kTestBurst: {
@@ -723,7 +871,8 @@ void UiControllerTask::FormatLine2(char* out, size_t size) const {
   // while keyed (the A3E chain can only be measured while it runs, which is
   // exactly while the PTT is held).
   const bool show_isr_stats =
-      mode_ == UiMode::kTestTone || mode_ == UiMode::kTestBurst ||
+      mode_ == UiMode::kTestTone || mode_ == UiMode::kTestDot ||
+      mode_ == UiMode::kTestBurst ||
       (mode_ == UiMode::kVoice && tx_.GetState() == TxState::kTxKeyed);
   if (show_isr_stats) {
     FormatIsrStats(modulator_.GetStats(), out, size);
@@ -769,13 +918,25 @@ void UiControllerTask::UpdateDisplay() {
     FormatLine1(line1, sizeof(line1));
     FormatLine2(line2, sizeof(line2));
 
-    // Battery voltage, always in the bottom right corner ("12.8V"). It is
-    // laid over whatever the second line holds, ISR statistics included.
+    // Battery voltage in the bottom right corner ("12.8V"). It is laid over
+    // whatever the second line holds, ISR statistics included. While idle in
+    // a transmitting mode the corner alternates with the output stage
+    // ("500mW"), so the stage can be checked without entering PWR (spec 9.5).
     const float battery = battery_voltage_.load(std::memory_order_relaxed);
-    if (battery > 0.0f) {
+    const bool show_power =
+        !tx_.IsTransmitting() &&
+        (mode_ == UiMode::kVoice || mode_ == UiMode::kArdf ||
+         mode_ == UiMode::kCw) &&
+        ((NowMs() / kReadoutSwapMs) % 2 == 1);
+    if (battery > 0.0f || show_power) {
       constexpr size_t kVoltCols = 5;
       char volt[kVoltCols + 1];
-      std::snprintf(volt, sizeof(volt), "%4.1fV", static_cast<double>(battery));
+      if (show_power) {
+        std::snprintf(volt, sizeof(volt), "%s", kPowerText[settings_.GetPower()]);
+      } else {
+        std::snprintf(volt, sizeof(volt), "%4.1fV",
+                      static_cast<double>(battery));
+      }
       const size_t start = kCols - kVoltCols;
       for (size_t i = std::strlen(line2); i < start; ++i) line2[i] = ' ';
       std::memcpy(&line2[start], volt, kVoltCols);

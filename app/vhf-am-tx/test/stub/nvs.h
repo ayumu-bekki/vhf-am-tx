@@ -54,7 +54,13 @@ inline esp_err_t nvs_erase_key(nvs_handle_t, const char* k) {
   std::lock_guard<std::mutex> l(g_nvs.m);
   return g_nvs.kv.erase(k) ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
-inline esp_err_t nvs_get_u8(nvs_handle_t, const char*, uint8_t*) { return ESP_ERR_NVS_NOT_FOUND; }
+inline esp_err_t nvs_get_u8(nvs_handle_t, const char* k, uint8_t* out) {
+  std::lock_guard<std::mutex> l(g_nvs.m);
+  auto it = g_nvs.kv.find(k);
+  if (it == g_nvs.kv.end()) return ESP_ERR_NVS_NOT_FOUND;
+  *out = static_cast<uint8_t>(std::stoul(it->second));
+  return ESP_OK;
+}
 inline esp_err_t nvs_get_u32(nvs_handle_t, const char*, uint32_t*) { return ESP_ERR_NVS_NOT_FOUND; }
 // Strings are read back, so the callsign load path can be exercised.
 inline esp_err_t nvs_get_str(nvs_handle_t, const char* k, char* out, size_t* len) {

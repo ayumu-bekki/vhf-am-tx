@@ -11,6 +11,7 @@
 
 #include "ardf_scheduler.h"
 #include "button_event.h"
+#include "cw_keyer.h"
 #include "hardware_config.h"
 #include "message_queue.h"
 #include "modulator.h"
@@ -31,14 +32,17 @@ namespace transmitter_system {
 /// so they have to be reachable from the buttons alone.
 enum class UiMode : uint8_t {
   kVoice = 0,    // A3E, FN+ is the PTT
+  kCw,           // hand key: on the air while SW1 is held; SW2 = A2A/A1A
   kArdf,         // A2A, FN+ toggles the run
   kFrequency,    // +-20kHz
+  kPower,        // output stage 1.5W / 500mW / 100mW
   kCallsign,     // 6 character editor
   kIdent,        // MOE..MO
   kWpm,          // CW speed, 5..40
   kTestDuty,     // fixed duty, carrier off - measure to set kModKCal
   kTestCarrier,  // carrier only, x = 0
   kTestTone,     // continuous A2A tone
+  kTestDot,      // continuous A1A dits, CLK0 switched as in the CW mode
   kTestBurst,    // tone for 5s at the start of every minute, silent otherwise
   kCount,
 };
@@ -53,7 +57,7 @@ class UiControllerTask final : public Task {
 
   UiControllerTask(ST7032& lcd, TransmitterSettings& settings,
                    TxController& tx, ArdfScheduler& ardf, Modulator& modulator,
-                   Si5351A& si5351a);
+                   Si5351A& si5351a, CwKeyer& keyer);
 
   MessageQueue<ButtonEvent>* GetButtonEventQueue() { return &event_queue_; }
 
@@ -72,6 +76,7 @@ class UiControllerTask final : public Task {
     kLow = 0,   // half carrier
     kHigh,      // full carrier
     kPeak,      // 1.8x carrier, imitates a modulation crest; times out
+    kStage,     // carrier of the output stage chosen in the PWR mode
     kCount,
   };
 
@@ -91,6 +96,13 @@ class UiControllerTask final : public Task {
 
   void CycleCallsignCursor();
   void IncrementCallsignChar();
+
+  void AdjustPower(int direction);
+  void ToggleEmission();
+  void ApplyTxSettings();
+  void UpdateDot();
+  static bool IsModeEnabled(UiMode mode);
+  static UiMode NextMode(UiMode mode);
 
   void AdjustIdent(int direction);
   void AdjustWpm(int direction);
@@ -114,6 +126,7 @@ class UiControllerTask final : public Task {
   ArdfScheduler& ardf_;
   Modulator& modulator_;
   Si5351A& si5351a_;
+  CwKeyer& keyer_;
 
   UiMode mode_;
 

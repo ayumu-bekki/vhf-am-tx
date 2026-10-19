@@ -29,6 +29,9 @@ class ToneGenerator {
     kToneKeying = 0,
     /// Conventional CW feel: x is pulled to -1 (duty 0) on key up.
     kCarrierKeying = 1,
+    /// A1A: x = env(t) - 1, i.e. -1 (duty 0) on key up and 0 (the carrier of
+    /// the selected stage) on key down. No tone.
+    kA1a = 2,
   };
 
   ToneGenerator();
@@ -46,7 +49,9 @@ class ToneGenerator {
   /// this to know when an element has really finished sounding.
   bool IRAM_ATTR IsSilent() const { return !key_down_ && envelope_index_ == 0; }
 
+  /// Only change this while nothing is being sent.
   void SetKeyingMode(KeyingMode mode) { keying_mode_ = mode; }
+  KeyingMode GetKeyingMode() const { return keying_mode_; }
 
   /// Produces one sample of x. Called exactly once per 25kHz tick.
   float IRAM_ATTR Next();

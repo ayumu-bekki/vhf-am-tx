@@ -4,6 +4,8 @@
 // (C)2025 bekki.jp
 
 #include <esp_attr.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "adc_sampler.h"
 #include "ardf_scheduler.h"
@@ -50,6 +52,12 @@ class TransmitterSystem final {
   static float IRAM_ATTR VoiceSample(void* context);
   static float IRAM_ATTR ToneSample(void* context);
 
+  // A1A: the keyer (ISR) asks for CLK0 to be switched; this task does the I2C
+  // write (spec 10.3). The ISR only wakes the task.
+  static void IRAM_ATTR ClkRequest(void* context, bool on);
+  static void ClkTaskEntry(void* arg);
+  void ClkTaskLoop();
+
  private:
   Si5351A si5351a_;
   ST7032 lcd_;
@@ -70,6 +78,8 @@ class TransmitterSystem final {
   // Last level written to the board LED, so the pin is only touched on a
   // change.
   bool status_led_on_ = false;
+
+  TaskHandle_t clk_task_ = nullptr;
 
   GpioInputWatchTask gpio_watch_task_;
   UiControllerTask ui_task_;

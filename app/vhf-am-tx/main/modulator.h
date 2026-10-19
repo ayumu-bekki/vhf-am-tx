@@ -105,6 +105,17 @@ class Modulator {
     return output_enabled_.load(std::memory_order_acquire);
   }
 
+  /// Output stage factor s (spec 6.5). Written before a transmission starts
+  /// and only read by the ISR while it runs.
+  void SetPowerScale(float scale) {
+    power_scale_.store(scale, std::memory_order_relaxed);
+  }
+
+  /// Jumps the start/stop ramp to its end value (full) without a ramp. A1A
+  /// uses this: x stays at -1 while key up, so the drain is at 0V and there is
+  /// nothing to ramp.
+  void SnapRampFull();
+
   /// Ramp control for the start and stop sequences (spec 8.2 / 8.3).
   /// The ramp runs inside the ISR so its timing is exact.
   void StartRampUp();
@@ -144,11 +155,12 @@ class Modulator {
   std::atomic<ModulationSource> source_;
   std::atomic<uint32_t> fixed_duty_;
   std::atomic<float> carrier_level_;
+  std::atomic<float> power_scale_{1.0f};
   std::atomic<bool> output_enabled_;
 
   // Ramp state (ISR only, except the request flags)
   std::atomic<bool> ramp_active_;
-  std::atomic<int8_t> ramp_request_;  // +1 up, -1 down, 0 none
+  std::atomic<int8_t> ramp_request_;  // +1 up, -1 down, 2 snap to full, 0 none
   int8_t ramp_direction_;
   uint32_t ramp_index_;
   float ramp_scale_;

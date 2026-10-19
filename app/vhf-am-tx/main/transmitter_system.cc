@@ -41,7 +41,7 @@ const gpio_num_t kUnusedGpioPins[] = {
 using util::NowMs;
 
 TransmitterSystem::TransmitterSystem()
-    : ui_task_(lcd_, settings_, tx_, ardf_, modulator_, si5351a_) {}
+    : ui_task_(lcd_, settings_, tx_, ardf_, modulator_, si5351a_, keyer_) {}
 
 float TransmitterSystem::CwKeyerSample(void* context) {
   return static_cast<CwKeyer*>(context)->Tick();
@@ -56,6 +56,30 @@ float TransmitterSystem::ToneSample(void* context) {
   ToneGenerator* tone = static_cast<ToneGenerator*>(context);
   tone->SetKey(true);  // continuous, no keying
   return tone->Next();
+}
+
+void TransmitterSystem::ClkRequest(void* context, bool /*on*/) {
+  TransmitterSystem* self = static_cast<TransmitterSystem*>(context);
+  if (!self->clk_task_) {
+    return;
+  }
+  BaseType_t woken = pdFALSE;
+  vTaskNotifyGiveFromISR(self->clk_task_, &woken);
+  portYIELD_FROM_ISR(woken);
+}
+
+void TransmitterSystem::ClkTaskEntry(void* arg) {
+  static_cast<TransmitterSystem*>(arg)->ClkTaskLoop();
+}
+
+// The state is read after the wake-up, not taken from the request: if two
+// requests pile up the last one wins, and the register ends up right. The
+// lead time is 1ms, so this task sits above every other one.
+void TransmitterSystem::ClkTaskLoop() {
+  while (true) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    si5351a_.CarrierOutput(keyer_.WantsClkOutput());
+  }
 }
 
 void TransmitterSystem::SetStatusLed(bool on) {
@@ -171,6 +195,15 @@ bool TransmitterSystem::InitializeHardware() {
   keyer_.SetToneGenerator(&tone_);
   keyer_.SetWpm(settings_.GetCwWpm());
 
+  constexpr UBaseType_t kClkTaskPriority = configMAX_PRIORITIES - 4;
+  if (xTaskCreate(&TransmitterSystem::ClkTaskEntry, "clk_switch", 3072, this,
+                  kClkTaskPriority, &clk_task_) != pdPASS) {
+    clk_task_ = nullptr;
+    ESP_LOGE(kTag, "CLK0 switching task failed: A1A unavailable");
+  } else {
+    keyer_.SetClkRequestCallback(&TransmitterSystem::ClkRequest, this);
+  }
+
   if (!modulator_.Initialize()) {
     ESP_LOGE(kTag, "Modulator init failed");
     return false;
@@ -182,6 +215,8 @@ bool TransmitterSystem::InitializeHardware() {
 
   tx_.SetModulator(&modulator_);
   tx_.SetSi5351A(&si5351a_);
+  tx_.SetToneGenerator(&tone_);
+  tx_.SetCwKeyer(&keyer_);
 
   ardf_.SetTxController(&tx_);
   ardf_.SetCwKeyer(&keyer_);

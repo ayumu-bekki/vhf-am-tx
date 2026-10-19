@@ -45,6 +45,13 @@ $CXX $FLAGS -include algorithm -o /tmp/test_txseq test_txseq.cc fakes_trace.cc \
 /tmp/test_txseq
 
 echo
+echo "=== A1A keying / CLK0 switching ==="
+$CXX $FLAGS -include algorithm -include string -o /tmp/test_a1a test_a1a.cc fakes_trace.cc \
+    $MAIN/morse.cc $MAIN/tone_generator.cc $MAIN/cw_keyer.cc \
+    $MAIN/tx_controller.cc
+/tmp/test_a1a
+
+echo
 echo "=== settings: background save ==="
 $CXX $FLAGS -pthread -o /tmp/test_settings test_settings.cc \
     $MAIN/transmitter_settings.cc $MAIN/morse.cc

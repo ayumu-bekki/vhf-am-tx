@@ -25,15 +25,19 @@ inline uint32_t IRAM_ATTR ClampDuty(uint32_t duty) {
 
 /// Converts the modulation input x to a duty register value.
 ///
-///   duty = kModKCal * (1 + x) * 256
+///   duty = kModKCal * s * (1 + x) * 256
+///
+/// `scale` is s of the selected output stage (spec 6.5, hardware_config.h
+/// PowerFactor()). It is fixed for the length of a transmission.
 ///
 /// First order error feedback dither (spec 6.4) carries the rounding error
 /// into the next sample, which moves the quantisation noise out of the audio
 /// band. Where the result is clamped the error is dropped instead: carrying
 /// it through a clamp would release one large correction the moment the clamp
 /// lets go.
-inline uint32_t IRAM_ATTR XToDuty(float x, float* dither_state) {
-  float target = hardware_config::kModKCal * (1.0f + x) *
+inline uint32_t IRAM_ATTR XToDuty(float x, float* dither_state,
+                                  float scale = 1.0f) {
+  float target = hardware_config::kModKCal * scale * (1.0f + x) *
                  static_cast<float>(hardware_config::kPwmFullScale);
   if (dither_state) {
     target += *dither_state;

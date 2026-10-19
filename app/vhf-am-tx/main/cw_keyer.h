@@ -33,6 +33,28 @@ class CwKeyer {
 
   void SetToneGenerator(ToneGenerator* tone) { tone_ = tone; }
 
+  /// A1A only (spec 10.3): called from the tick whenever the keyer wants CLK0
+  /// switched. The callback must not touch I2C; it only wakes a task, which
+  /// then reads WantsClkOutput() and writes the synthesiser.
+  using ClkRequestCallback = void (*)(void* context, bool on);
+  void SetClkRequestCallback(ClkRequestCallback cb, void* context) {
+    clk_cb_ = cb;
+    clk_cb_context_ = context;
+  }
+
+  /// CW mode (SW1 held): key down for as long as this is set, no Morse string.
+  /// With the 5ms edges of the tone generator on both sides. Only meaningful
+  /// while the keyer is the modulation source. CLK0 is not switched from
+  /// here: the TX controller does that for the manual key.
+  void SetManualKey(bool down) {
+    manual_key_.store(down, std::memory_order_release);
+  }
+
+  /// Whether CLK0 should currently be on (A1A). Always false for A2A.
+  bool WantsClkOutput() const {
+    return clk_wanted_.load(std::memory_order_acquire);
+  }
+
   /// Words per minute. Takes effect on the next element.
   void SetWpm(uint8_t wpm);
   uint8_t GetWpm() const { return wpm_; }
@@ -60,12 +82,19 @@ class CwKeyer {
     kInterGap,     // gap between characters
     kWordGap,      // gap for an explicit space
     kTailGap,      // let the envelope decay after the last element
+    kLead,         // A1A: CLK0 lead time before the first element
   };
 
   void IRAM_ATTR ResetSequence();
   void IRAM_ATTR StartNextElement();
   void IRAM_ATTR AdvanceCharacter();
   uint32_t IRAM_ATTR SamplesForUnits(uint32_t units) const;
+  bool IRAM_ATTR IsA1a() const {
+    return tone_->GetKeyingMode() == ToneGenerator::KeyingMode::kA1a;
+  }
+  void IRAM_ATTR RequestClk(bool on);
+  void IRAM_ATTR UpdateClkRequests();
+  bool IRAM_ATTR NextIsElement() const;
 
  private:
   ToneGenerator* tone_;
@@ -76,6 +105,8 @@ class CwKeyer {
   std::atomic<bool> pending_load_;
   std::atomic<bool> busy_;
   std::atomic<bool> stop_request_;
+  std::atomic<bool> manual_key_;
+  bool manual_active_;
 
   size_t char_index_;
   morse::Pattern pattern_;
@@ -86,6 +117,14 @@ class CwKeyer {
 
   uint8_t wpm_;
   uint32_t samples_per_unit_;
+
+  // A1A CLK0 switching. clk_hold_ keeps CLK0 on from the lead request until
+  // the element it was requested for has started (or the string ended).
+  std::atomic<bool> clk_wanted_;
+  bool clk_hold_;
+  uint32_t quiet_ticks_;  // ticks since the envelope reached zero
+  ClkRequestCallback clk_cb_;
+  void* clk_cb_context_;
 };
 
 }  // namespace transmitter_system

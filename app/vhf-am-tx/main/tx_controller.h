@@ -7,8 +7,12 @@
 #include <atomic>
 #include <cstdint>
 
+#include "cw_keyer.h"
+#include "emission.h"
+#include "hardware_config.h"
 #include "modulator.h"
 #include "si5351a.h"
+#include "tone_generator.h"
 
 namespace transmitter_system {
 
@@ -35,6 +39,34 @@ class TxController {
 
   void SetModulator(Modulator* modulator) { modulator_ = modulator; }
   void SetSi5351A(Si5351A* si5351a) { si5351a_ = si5351a; }
+  void SetToneGenerator(ToneGenerator* tone) { tone_ = tone; }
+  void SetCwKeyer(CwKeyer* keyer) { keyer_ = keyer; }
+
+  /// CW mode: keyed means "manual key down" on the CW keyer, not a Morse
+  /// string. In A1A the controller itself switches CLK0 on kA1aClkLeadMs
+  /// before the key goes down; the stop sequence takes it off again.
+  void SetManualKeying(bool manual) {
+    manual_keying_.store(manual, std::memory_order_release);
+  }
+
+  /// Output stage (spec 6.5). Read once, when a transmission starts: changing
+  /// it during one has no effect until the next start.
+  void SetPowerIndex(uint8_t index) {
+    power_index_.store(index < hardware_config::kPowerCount
+                           ? index
+                           : hardware_config::kPowerDefault,
+                       std::memory_order_release);
+  }
+
+  /// Class of emission for the CW keyer source (spec 5.3). Only the CW keyer
+  /// source is affected: the carrier-only, tone and voice sources always run
+  /// as before. Read when a transmission starts.
+  void SetEmission(Emission emission) {
+    emission_.store(emission, std::memory_order_release);
+  }
+  Emission GetEmission() const {
+    return emission_.load(std::memory_order_acquire);
+  }
 
   TxState GetState() const { return state_.load(std::memory_order_acquire); }
 
@@ -95,9 +127,14 @@ class TxController {
  private:
   void TransitionTo(TxState state);
 
+  /// A1A is in force for the transmission that is up or starting.
+  bool IsA1aActive() const { return a1a_active_; }
+
  private:
   Modulator* modulator_;
   Si5351A* si5351a_;
+  ToneGenerator* tone_;
+  CwKeyer* keyer_;
 
   std::atomic<TxState> state_;
   std::atomic<bool> ardf_running_;
@@ -107,6 +144,13 @@ class TxController {
   std::atomic<bool> keyed_request_;
 
   std::atomic<ModulationSource> keyed_source_;
+  std::atomic<uint8_t> power_index_;
+  std::atomic<Emission> emission_;
+  std::atomic<bool> manual_keying_;
+  int64_t clk_lead_start_ms_;  // A1A manual key: 0 until CLK0 was switched on
+
+  /// Latched at start, so a mid-transmission change cannot flip the sequence.
+  bool a1a_active_;
 
   /// Timestamp the current phase started, for the settle delays.
   int64_t phase_start_ms_;

@@ -30,6 +30,8 @@ namespace {
 TxController::TxController()
     : modulator_(nullptr),
       si5351a_(nullptr),
+      tone_(nullptr),
+      keyer_(nullptr),
       state_(TxState::kIdle),
       ardf_running_(false),
       inhibited_(false),
@@ -37,6 +39,11 @@ TxController::TxController()
       stop_request_(false),
       keyed_request_(false),
       keyed_source_(ModulationSource::kCwKeyer),
+      power_index_(hardware_config::kPowerDefault),
+      emission_(Emission::kA2a),
+      manual_keying_(false),
+      clk_lead_start_ms_(0),
+      a1a_active_(false),
       phase_start_ms_(0) {}
 
 void TxController::TransitionTo(TxState state) {
@@ -121,9 +128,16 @@ void TxController::Tick() {
       state != TxState::kIdle && state != TxState::kTxStopping) {
     stop_request_.store(false, std::memory_order_release);
     keyed_request_.store(false, std::memory_order_release);
+    if (keyer_) {
+      keyer_->SetManualKey(false);  // 5ms envelope fall, then the ramp-down
+    }
+    clk_lead_start_ms_ = 0;
 
     // Step 1: ramp the duty down over 5ms. The carrier stays up throughout.
-    modulator_->SetSource(ModulationSource::kSilent);
+    // A1A keeps the keyer as the source: the silent source would be x = 0,
+    // the carrier level, which is not where an A1A key-up sits.
+    modulator_->SetSource(a1a_active_ ? ModulationSource::kCwKeyer
+                                      : ModulationSource::kSilent);
     modulator_->StartRampDown();
     TransitionTo(TxState::kTxStopping);
     return;
@@ -140,9 +154,29 @@ void TxController::Tick() {
         modulator_->SetOutputEnabled(false);
         modulator_->SetSource(ModulationSource::kSilent);
 
+        // Everything that depends on the stage or the emission is decided
+        // here and not touched again until the next start: the ISR only reads
+        // it (spec 6.5).
+        modulator_->SetPowerScale(hardware_config::PowerFactor(
+            power_index_.load(std::memory_order_acquire)));
+        a1a_active_ = emission_.load(std::memory_order_acquire) ==
+                          Emission::kA1a &&
+                      keyed_source_.load(std::memory_order_acquire) ==
+                          ModulationSource::kCwKeyer;
+        if (tone_) {
+          tone_->SetKeyingMode(a1a_active_
+                                   ? ToneGenerator::KeyingMode::kA1a
+                                   : ToneGenerator::KeyingMode::kToneKeying);
+        }
+
         if (!si5351a_->CarrierEnable()) {
           EnterFault("carrier enable failed");
           break;
+        }
+        if (a1a_active_) {
+          // The carrier stays off between elements. CLK0 is enabled only to
+          // get the PLL locked; the keyer switches it from here on.
+          si5351a_->CarrierOutput(false);
         }
         TransitionTo(TxState::kTxStarting);
       }
@@ -151,6 +185,15 @@ void TxController::Tick() {
     case TxState::kTxStarting: {
       // CarrierEnable already waited for the PLL. Step 3: ramp the duty from
       // 0 up to the carrier level over 5ms.
+      if (a1a_active_) {
+        // x = -1 while key up, so the drain is already at 0V: no ramp, no
+        // carrier. The keyer raises it with the first element.
+        modulator_->SetSource(ModulationSource::kCwKeyer);
+        modulator_->SetOutputEnabled(true);
+        modulator_->SnapRampFull();
+        TransitionTo(TxState::kTxReady);
+        break;
+      }
       if (!modulator_->IsOutputEnabled()) {
         modulator_->SetOutputEnabled(true);
         modulator_->StartRampUp();
@@ -164,7 +207,25 @@ void TxController::Tick() {
 
     case TxState::kTxReady:
       if (keyed_request_.load(std::memory_order_acquire)) {
+        const bool manual = manual_keying_.load(std::memory_order_acquire) &&
+                            keyed_source_.load(std::memory_order_acquire) ==
+                                ModulationSource::kCwKeyer;
+        if (manual && a1a_active_) {
+          // A1A: CLK0 up first, then the key follows 1ms later.
+          if (clk_lead_start_ms_ == 0) {
+            si5351a_->CarrierOutput(true);
+            clk_lead_start_ms_ = NowMs();
+            break;
+          }
+          if ((NowMs() - clk_lead_start_ms_) <
+              static_cast<int64_t>(hardware_config::kA1aClkLeadMs)) {
+            break;
+          }
+        }
         modulator_->SetSource(keyed_source_.load(std::memory_order_acquire));
+        if (manual && keyer_) {
+          keyer_->SetManualKey(true);
+        }
         TransitionTo(TxState::kTxKeyed);
       }
       break;
@@ -173,7 +234,15 @@ void TxController::Tick() {
       if (!keyed_request_.load(std::memory_order_acquire)) {
         // Back to carrier only. For A2A this is the normal resting state
         // between characters; the carrier is never keyed.
-        modulator_->SetSource(ModulationSource::kSilent);
+        if (keyer_) {
+          keyer_->SetManualKey(false);
+        }
+        if (clk_lead_start_ms_ != 0 && si5351a_) {
+          si5351a_->CarrierOutput(false);  // A1A manual key released
+        }
+        clk_lead_start_ms_ = 0;
+        modulator_->SetSource(a1a_active_ ? ModulationSource::kCwKeyer
+                                          : ModulationSource::kSilent);
         TransitionTo(TxState::kTxReady);
       }
       break;

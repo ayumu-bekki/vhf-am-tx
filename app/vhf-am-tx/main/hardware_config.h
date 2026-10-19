@@ -136,6 +136,32 @@ static_assert(static_cast<float>(kDutyHardMax) /
 static_assert(kModKCal >= kModKCalMin && kModKCal <= kModKCalMax,
               "kModKCal is outside +-5% of nominal");
 
+// ---- Output stage (spec 6.5) ------------------------------------------------
+// The stage scales the whole mapping: reg = kModKCal * s * (1 + x) * 256, with
+// s = kPowerScale[i] * kPowerTrim[i]. The modulation depth does not change with
+// the stage. Index 0 is 1.5W (the stage kModKCal is calibrated at).
+constexpr uint8_t kPowerCount = 3;
+constexpr float kPowerScale[kPowerCount] = {1.000f, 0.5774f, 0.2582f};  // 1.5W / 500mW / 100mW
+// CALIBRATE per stage against T:CARR S (+-0.5dB). Leave kModKCal alone.
+constexpr float kPowerTrim[kPowerCount] = {1.0f, 1.0f, 1.0f};
+constexpr uint8_t kPowerDefault = 0;
+
+/// Combined factor s of a stage. Out-of-range indexes fall back to 1.5W.
+constexpr float PowerFactor(uint8_t index) {
+  return index < kPowerCount ? kPowerScale[index] * kPowerTrim[index]
+                             : kPowerScale[0] * kPowerTrim[0];
+}
+
+/// Carrier duty register value of a stage: round(kModKCal * s * 256).
+constexpr uint32_t CarrierDuty(uint8_t index) {
+  return static_cast<uint32_t>(kModKCal * PowerFactor(index) *
+                                   static_cast<float>(kPwmFullScale) +
+                               0.5f);
+}
+static_assert(CarrierDuty(0) == 84 && CarrierDuty(1) == 49 &&
+                  CarrierDuty(2) == 22,
+              "carrier duty per stage must be 84 / 49 / 22");
+
 // ============================================================================
 // Debug test modes (spec 12)
 // ============================================================================
@@ -293,6 +319,28 @@ constexpr uint32_t kMoCallIntervalS = 600;
 // entered in CALL mode and saved to NVS the callsign is unset, the title
 // screen leaves it blank and ARDF refuses to start (spec 10.5 requires it).
 constexpr uint8_t kCallLength = 6;
+
+// A1A (spec 10.3, CW mode only; ARDF is always A2A): CLK0 is switched on this long before the key-down edge
+// starts and off this long after the key-up edge has finished. The shortest gap
+// (40 WPM, one unit) is 30ms, so 1 + 5 + 10 ms always fits inside it.
+constexpr uint32_t kA1aClkLeadMs = 1;
+constexpr uint32_t kA1aClkTailMs = 10;
+constexpr uint32_t kA1aClkLeadSamples = kA1aClkLeadMs * kTickHz / 1000;  // 25
+constexpr uint32_t kA1aClkTailSamples = kA1aClkTailMs * kTickHz / 1000;  // 250
+
+// Set by menuconfig: AM Transmitter -> Enable the ARDF mode / the CW mode.
+// Without ARDF the ARDF, ID and WPM modes are left out of the SW_MODE cycle;
+// the callsign editor always stays.
+#ifdef CONFIG_AM_TX_ARDF_MODE
+constexpr bool kArdfModeEnabled = true;
+#else
+constexpr bool kArdfModeEnabled = false;
+#endif
+#ifdef CONFIG_AM_TX_CW_MODE
+constexpr bool kCwModeEnabled = true;
+#else
+constexpr bool kCwModeEnabled = false;
+#endif
 
 // ============================================================================
 // Buttons (spec 9.7)

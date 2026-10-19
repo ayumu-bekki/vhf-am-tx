@@ -12,8 +12,26 @@ menu "AM Transmitter"
             Disable this for bench testing on USB power or with no battery
             fitted. Leave it enabled for anything that runs from the pack.
 
+    config AM_TX_ARDF_MODE
+        bool "Enable the ARDF mode (with the ARDF ID and CW speed modes)"
+        default y
+        help
+            The ARDF mode runs the five minute fox-hunting schedule (always
+            A2A). The ARDF ID and the CW speed (WPM) edit modes only
+            make sense with it, so they are left out when this is off. The
+            callsign editor is always available. The CW speed then stays at
+            the last saved value.
+
+    config AM_TX_CW_MODE
+        bool "Enable the CW mode"
+        default y
+        help
+            The CW mode is a hand key: the signal is on the air while SW1 is
+            held. SW2 switches between A2A (keyed tone on a steady carrier)
+            and A1A (keyed carrier).
+
     config AM_TX_DEBUG_MODES
-        bool "Enable the debug test modes (D:DUTY, D:CARR, D:TONE, D:BRST)"
+        bool "Enable the debug test modes (D:DUTY, D:CARR, D:TONE, D:DOT, D:BRST)"
         default n
         help
             Adds the bench test modes to the end of the SW_MODE cycle.
