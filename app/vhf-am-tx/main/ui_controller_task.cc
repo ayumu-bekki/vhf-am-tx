@@ -40,13 +40,12 @@ constexpr char kCallsignUnsetChar = '-';
 /// (frequency write, display refresh, D:BRST) can run.
 constexpr uint32_t kQueueTimeoutMs = 50;
 
-/// LCD text of the output stages (spec 9.5): "PWR 1.5W" / "PWR500mW" /
-/// "PWR100mW"; the same five characters alternate with the battery voltage.
-const char* const kPowerText[hardware_config::kPowerCount] = {
-    " 1.5W", "500mW", "100mW"};
-
-/// Alternation period of the battery / output stage readout while idle.
-constexpr int64_t kReadoutSwapMs = 2000;
+/// Output stage on the PWR mode's top line ("H:1.5W" / "M:500mW" / "L:100mW")
+/// and as the single letter at the right end of the top line in the other
+/// modes.
+const char* const kPowerLabel[hardware_config::kPowerCount] = {
+    "H:1.5W", "M:500mW", "L:100mW"};
+constexpr char kPowerLetter[hardware_config::kPowerCount] = {'H', 'M', 'L'};
 
 /// D:DOT sends this over and over: 24 dits.
 constexpr const char* kDotText = "EEEEEEEEEEEEEEEEEEEEEEEE";
@@ -833,7 +832,7 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       break;
 
     case UiMode::kPower:
-      std::snprintf(out, size, "PWR%s", kPowerText[settings_.GetPower()]);
+      std::snprintf(out, size, "%s", kPowerLabel[settings_.GetPower()]);
       break;
 
     case UiMode::kCallsign:
@@ -939,25 +938,26 @@ void UiControllerTask::UpdateDisplay() {
     FormatLine1(line1, sizeof(line1));
     FormatLine2(line2, sizeof(line2));
 
+    // Output stage letter at the right end of the top line, in the modes that
+    // transmit with it (VOICE, CW, ARDF). Not on FAULT.
+    if ((mode_ == UiMode::kVoice || mode_ == UiMode::kCw ||
+         mode_ == UiMode::kArdf) &&
+        tx_.GetState() != TxState::kFault) {
+      const size_t len = std::strlen(line1);
+      if (len < kCols - 1) {
+        for (size_t i = len; i < kCols - 1; ++i) line1[i] = ' ';
+        line1[kCols - 1] = kPowerLetter[settings_.GetPower()];
+        line1[kCols] = '\0';
+      }
+    }
+
     // Battery voltage in the bottom right corner ("12.8V"). It is laid over
-    // whatever the second line holds, ISR statistics included. While idle in
-    // a transmitting mode the corner alternates with the output stage
-    // ("500mW"), so the stage can be checked without entering PWR (spec 9.5).
+    // whatever the second line holds, ISR statistics included.
     const float battery = battery_voltage_.load(std::memory_order_relaxed);
-    const bool show_power =
-        !tx_.IsTransmitting() &&
-        (mode_ == UiMode::kVoice || mode_ == UiMode::kArdf ||
-         mode_ == UiMode::kCw) &&
-        ((NowMs() / kReadoutSwapMs) % 2 == 1);
-    if (battery > 0.0f || show_power) {
+    if (battery > 0.0f) {
       constexpr size_t kVoltCols = 5;
       char volt[kVoltCols + 1];
-      if (show_power) {
-        std::snprintf(volt, sizeof(volt), "%s", kPowerText[settings_.GetPower()]);
-      } else {
-        std::snprintf(volt, sizeof(volt), "%4.1fV",
-                      static_cast<double>(battery));
-      }
+      std::snprintf(volt, sizeof(volt), "%4.1fV", static_cast<double>(battery));
       const size_t start = kCols - kVoltCols;
       for (size_t i = std::strlen(line2); i < start; ++i) line2[i] = ' ';
       std::memcpy(&line2[start], volt, kVoltCols);
