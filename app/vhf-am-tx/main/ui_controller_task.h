@@ -100,6 +100,7 @@ class UiControllerTask final : public Task {
   void AdjustPower(int direction);
   void ToggleEmission();
   void ApplyTxSettings();
+  void UpdateArdfStopHold();
   void UpdateDot();
   static bool IsModeEnabled(UiMode mode);
   static UiMode NextMode(UiMode mode);
@@ -140,6 +141,9 @@ class UiControllerTask final : public Task {
   // Callsign editor state (spec 9.4.4)
   char callsign_[hardware_config::kCallLength + 1];
   uint8_t callsign_cursor_;
+
+  // ARDF: when FN+ went down while a run was in progress (0 = not counting).
+  int64_t ardf_stop_press_ms_;
 
   // Test mode state
   uint32_t test_duty_;

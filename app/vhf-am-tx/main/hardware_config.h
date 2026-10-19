@@ -349,6 +349,10 @@ constexpr bool kCwModeEnabled = false;
 constexpr uint32_t kButtonPollIntervalMs = 5;
 constexpr uint32_t kBtnDebounceMs = 20;
 
+// ARDF run: starting is a short press, stopping needs FN+ held this long, so a
+// stray touch cannot take the station off the air mid competition.
+constexpr uint32_t kArdfStopHoldMs = 1000;
+
 // Auto-repeat applies to FN+/FN- only. SW_MODE is always single shot, and so
 // are the voice PTT and the ARDF run toggle.
 constexpr uint32_t kBtnRepeatDelayMs = 600;

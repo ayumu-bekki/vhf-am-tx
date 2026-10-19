@@ -98,6 +98,7 @@ UiControllerTask::UiControllerTask(ST7032& lcd, TransmitterSettings& settings,
       frequency_pending_(false),
       callsign_{},
       callsign_cursor_(0),
+      ardf_stop_press_ms_(0),
       test_duty_(hardware_config::kDutyCarrier),
       test_duty_active_(false),
       test_output_on_(false),
@@ -151,6 +152,7 @@ void UiControllerTask::Update() {
   UpdateCarrierPeakTimeout();
   UpdateBurst();
   UpdateDot();
+  UpdateArdfStopHold();
   settings_.Tick();
 
   const int64_t now = NowMs();
@@ -271,7 +273,8 @@ void UiControllerTask::OnFnPlusPress() {
 
     case UiMode::kArdf:
       if (ardf_.IsRunning()) {
-        ardf_.Stop();
+        // Stopping takes a 1s hold; UpdateArdfStopHold() does it.
+        ardf_stop_press_ms_ = NowMs();
       } else {
         ardf_.Start();
       }
@@ -351,6 +354,7 @@ void UiControllerTask::OnFnPlusPress() {
 }
 
 void UiControllerTask::OnFnPlusRelease() {
+  ardf_stop_press_ms_ = 0;  // released before the hold time: nothing happens
   if (mode_ == UiMode::kVoice || mode_ == UiMode::kCw) {
     tx_.SetKeyed(false);
     tx_.RequestStop();
@@ -713,6 +717,23 @@ void UiControllerTask::UpdateCarrierPeakTimeout() {
       carrier_level_ == CarrierLevel::kPeak &&
       (NowMs() - carrier_on_ms_) >= hardware_config::kCarrierPeakMaxMs) {
     StopTestOutput();
+    UpdateDisplay();
+  }
+}
+
+// ARDF: FN+ held for kArdfStopHoldMs while a run is in progress ends it.
+void UiControllerTask::UpdateArdfStopHold() {
+  if (ardf_stop_press_ms_ == 0) {
+    return;
+  }
+  if (mode_ != UiMode::kArdf || !ardf_.IsRunning()) {
+    ardf_stop_press_ms_ = 0;
+    return;
+  }
+  if ((NowMs() - ardf_stop_press_ms_) >=
+      static_cast<int64_t>(hardware_config::kArdfStopHoldMs)) {
+    ardf_stop_press_ms_ = 0;
+    ardf_.Stop();
     UpdateDisplay();
   }
 }
