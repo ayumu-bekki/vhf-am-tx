@@ -623,8 +623,8 @@ void UiControllerTask::AdjustPower(int direction) {
 
 /// Hands the stage and the emission of the current mode to the TX controller,
 /// which latches them when the next transmission starts. ARDF and everything
-/// but the CW mode are A2A; D:DOT is A1A; the D:CARR levels other than S run
-/// at 1.5W whatever the stage is (calibration reference).
+/// but the CW mode are A2A; the CW mode and D:DOT are A1A; the D:CARR levels
+/// other than S run at 1.5W whatever the stage is (calibration reference).
 void UiControllerTask::ApplyTxSettings() {
   const bool a1a = mode_ == UiMode::kCw || mode_ == UiMode::kTestDot;
   tx_.SetEmission(a1a ? Emission::kA1a : Emission::kA2a);
@@ -784,7 +784,7 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       break;
 
     case UiMode::kCw:
-      std::snprintf(out, size, "CW A1A%s", tx_.IsTransmitting() ? " TX" : "");
+      std::snprintf(out, size, "CW%s", tx_.IsTransmitting() ? " TX" : "");
       break;
 
     case UiMode::kArdf: {

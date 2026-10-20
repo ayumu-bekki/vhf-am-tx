@@ -101,7 +101,14 @@ bool Si5351A::CarrierEnable() {
   const uint8_t reset_pll_bit =
       (carrier_clk_ == Clk::kClk0 ? kResetPllA : kResetPllB);
 
-  // Reset the PLL so it reacquires cleanly, then release the output.
+  // CLK is kept powered down while idle so the MultiSynth does not run (and
+  // leak) with no carrier requested. Power it up first, then reset the PLL so
+  // it reacquires cleanly, then release the output.
+  const uint8_t reg_clk_ctrl =
+      kRegClk0Ctrl + static_cast<uint8_t>(carrier_clk_);
+  if (!Write(reg_clk_ctrl, kClkPower2mA)) {
+    return false;
+  }
   if (!Write(kRegPllReset, reset_pll_bit)) {
     return false;
   }
@@ -159,6 +166,13 @@ bool Si5351A::CarrierDisable() {
   clk_output_status_ |= clk_bit;
   if (!Write(kRegOutputCtrl, clk_output_status_)) {
     ESP_LOGE(kTag, "Failed to disable carrier");
+    return false;
+  }
+
+  // Power the CLK down so nothing keeps running while idle.
+  if (!Write(kRegClk0Ctrl + static_cast<uint8_t>(carrier_clk_),
+             kClkPowerDown)) {
+    ESP_LOGE(kTag, "Failed to power down CLK");
     return false;
   }
 
@@ -272,11 +286,8 @@ bool Si5351A::SetFrequency(const Clk clk, const uint32_t freq) {
   // MultiSynth分周器とR分周器を設定
   ok &= SetMultiSynth(reg_multisynth, multisynth_div, rdiv_bits);
 
-  // Clkをパワーアップ (駆動電流: 2mA)
-  ok &= Write(reg_clk_ctrl, kClkPower2mA);
-
-  // The output is left disabled: the transmit sequence (spec 8.2) decides
-  // when the carrier comes up, via CarrierEnable().
+  // The CLK is left powered down and disabled: the transmit sequence
+  // (spec 8.2) powers it up (2mA) and releases it via CarrierEnable().
   carrier_clk_ = clk;
   current_freq_hz_ = freq;
   frequency_set_ = ok;
