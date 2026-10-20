@@ -186,7 +186,8 @@ constexpr int64_t kCarrierPeakMaxMs = 3000;
 // Modulation Input x (spec 2.1, 4.2, 5.1)
 // ============================================================================
 
-// A2A tone amplitude: 80% modulation / 0.877 (M2 loss at 700Hz).
+// A2A tone amplitude: 80% modulation / 0.877 (M2 loss at 700Hz). The same
+// amplitude is used at every tone frequency.
 // CALIBRATE together with the M2 component values.
 constexpr float kXGainA2a = 0.912f;
 
@@ -205,19 +206,16 @@ constexpr float kXAbsMax = 1.143f;  // maps to kDutyHardMax (187)
 // Tone Generation (spec 5)
 // ============================================================================
 
-constexpr uint32_t kToneHz = 700;
+// The tone pitch is set in 1Hz steps between 440Hz and 2093Hz. The default
+// is 698Hz (F5), where the old fixed 700Hz tone sat.
+constexpr uint16_t kToneHzMin = 440;
+constexpr uint16_t kToneHzMax = 2093;
+constexpr uint16_t kToneHzDefault = 698;
 constexpr uint32_t kSineTableBits = 8;
 constexpr uint32_t kSineTableSize = 1u << kSineTableBits;  // 256
 
-// Phase increment for a 32-bit accumulator: (700 / 25000) * 2^32
-//   700 / 25000 = 0.028 exactly, 0.028 * 2^32 = 120259084.288 -> 0x072B020C
-// which lands on 699.999998 Hz.
-//
-// NOTE: spec 5.1 prints 0x01CAC083 for this constant, which is exactly a
-// quarter of the correct value and would sound a 175Hz tone. That figure
-// matches a 2^30 accumulator, so it looks like a scaling slip in the spec.
-// Using the corrected value here; spec 5.1 needs the same fix.
-constexpr uint32_t kTonePhaseIncrement = 0x072B020Cu;
+// The phase increment of the 32-bit accumulator is (f / 25000) * 2^32,
+// worked out by ToneGenerator::SetNote().
 
 // Raised-cosine envelope, spec 5.2. 5ms at 25kHz = 125 samples.
 constexpr float kEnvelopeMs = 5.0f;

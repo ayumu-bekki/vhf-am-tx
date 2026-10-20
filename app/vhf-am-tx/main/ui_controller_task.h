@@ -39,6 +39,7 @@ enum class UiMode : uint8_t {
   kCallsign,     // 6 character editor
   kIdent,        // MOE..MO
   kWpm,          // CW speed, 5..40
+  kTone,         // tone pitch, 440..2093Hz in 1Hz steps (ARDF and D:TONE)
   kTestDuty,     // fixed duty, carrier off - measure to set kModKCal
   kTestCarrier,  // carrier only, x = 0
   kTestTone,     // continuous A2A tone
@@ -58,6 +59,9 @@ class UiControllerTask final : public Task {
   UiControllerTask(ST7032& lcd, TransmitterSettings& settings,
                    TxController& tx, ArdfScheduler& ardf, Modulator& modulator,
                    Si5351A& si5351a, CwKeyer& keyer);
+
+  /// The tone generator whose pitch the TONE mode sets.
+  void SetToneGenerator(ToneGenerator* tone) { tone_ = tone; }
 
   MessageQueue<ButtonEvent>* GetButtonEventQueue() { return &event_queue_; }
 
@@ -106,6 +110,7 @@ class UiControllerTask final : public Task {
 
   void AdjustIdent(int direction);
   void AdjustWpm(int direction);
+  void AdjustTone(int direction, bool repeat);
   void AdjustTestDuty(int direction);
   float CarrierLevelValue() const;
   void StopTestOutput();
@@ -127,6 +132,7 @@ class UiControllerTask final : public Task {
   Modulator& modulator_;
   Si5351A& si5351a_;
   CwKeyer& keyer_;
+  ToneGenerator* tone_ = nullptr;
 
   UiMode mode_;
 

@@ -19,11 +19,29 @@ ToneGenerator::ToneGenerator()
     : sine_table_{},
       envelope_table_{},
       phase_(0),
+      phase_increment_(0),
+      tone_hz_(hardware_config::kToneHzDefault),
       envelope_index_(0),
       key_down_(false),
       amplitude_(hardware_config::kXGainA2a),
       keying_mode_(KeyingMode::kToneKeying),
-      initialized_(false) {}
+      initialized_(false) {
+  SetFrequencyHz(tone_hz_);
+}
+
+void ToneGenerator::SetFrequencyHz(uint16_t hz) {
+  if (hz < hardware_config::kToneHzMin) {
+    hz = hardware_config::kToneHzMin;
+  }
+  if (hz > hardware_config::kToneHzMax) {
+    hz = hardware_config::kToneHzMax;
+  }
+  tone_hz_ = hz;
+  // (f / 25000) * 2^32, rounded: f * 2^32 / 25000 in integers.
+  phase_increment_ = static_cast<uint32_t>(
+      (static_cast<uint64_t>(hz) * 4294967296ull + hardware_config::kTickHz / 2) /
+      hardware_config::kTickHz);
+}
 
 void ToneGenerator::Initialize() {
   if (initialized_) {
@@ -54,7 +72,7 @@ float ToneGenerator::NextSine() {
   // The top kSineTableBits of the accumulator index the table.
   const int16_t sample =
       sine_table_[phase_ >> (32 - hardware_config::kSineTableBits)];
-  phase_ += hardware_config::kTonePhaseIncrement;
+  phase_ += phase_increment_;
   return static_cast<float>(sample) * kSineInvScale * amplitude_;
 }
 

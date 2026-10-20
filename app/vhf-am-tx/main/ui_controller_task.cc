@@ -208,6 +208,10 @@ bool UiControllerTask::IsModeEnabled(UiMode mode) {
     case UiMode::kIdent:
     case UiMode::kWpm:
       return hardware_config::kArdfModeEnabled;
+    case UiMode::kTone:
+      // Used by ARDF and by D:TONE; reachable if either is built in.
+      return hardware_config::kArdfModeEnabled ||
+             hardware_config::kDebugModesEnabled;
     case UiMode::kCw:
       return hardware_config::kCwModeEnabled;
     case UiMode::kTestDuty:
@@ -306,6 +310,10 @@ void UiControllerTask::OnFnPlusPress() {
       AdjustWpm(+1);
       break;
 
+    case UiMode::kTone:
+      AdjustTone(+1, /*repeat=*/false);
+      break;
+
     case UiMode::kTestDuty:
       AdjustTestDuty(+1);
       break;
@@ -383,6 +391,10 @@ void UiControllerTask::OnFnMinusPress() {
       AdjustWpm(-1);
       break;
 
+    case UiMode::kTone:
+      AdjustTone(-1, /*repeat=*/false);
+      break;
+
     case UiMode::kTestDuty:
       AdjustTestDuty(-1);
       break;
@@ -421,6 +433,14 @@ void UiControllerTask::OnFnRepeat(ButtonEvent::Button button) {
       } else if (button == ButtonEvent::Button::kFnMinus) {
         OnFnMinusPress();
       }
+      break;
+    case UiMode::kTone:
+      if (button == ButtonEvent::Button::kFnPlus) {
+        AdjustTone(+1, /*repeat=*/true);
+      } else if (button == ButtonEvent::Button::kFnMinus) {
+        AdjustTone(-1, /*repeat=*/true);
+      }
+      UpdateDisplay();
       break;
     default:
       break;
@@ -656,6 +676,26 @@ void UiControllerTask::AdjustWpm(int direction) {
   ardf_.SetWpm(static_cast<uint8_t>(wpm));
 }
 
+void UiControllerTask::AdjustTone(int direction, bool repeat) {
+  // A press moves 1Hz. The auto-repeat that follows a hold runs on to the
+  // next multiple of 10Hz instead, so 600 / 700 / 800 / 900 / 1000 can be
+  // hit by letting go at the right moment. Clamped at both ends, not wrapped.
+  const int current = static_cast<int>(settings_.GetToneHz());
+  int hz = current + direction;
+  if (repeat) {
+    hz = direction > 0 ? (current / 10 + 1) * 10
+                       : ((current - 1) / 10) * 10;
+  }
+  if (hz < hardware_config::kToneHzMin) hz = hardware_config::kToneHzMin;
+  if (hz > hardware_config::kToneHzMax) hz = hardware_config::kToneHzMax;
+  settings_.SetToneHz(static_cast<uint16_t>(hz));
+  if (tone_) {
+    // Nothing is on the air here: a mode switch is refused while
+    // transmitting, so the ISR never sees the pitch change mid tone.
+    tone_->SetFrequencyHz(static_cast<uint16_t>(hz));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Test modes
 // ---------------------------------------------------------------------------
@@ -825,6 +865,10 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
                     static_cast<unsigned>(settings_.GetCwWpm()));
       break;
 
+    case UiMode::kTone:
+      std::snprintf(out, size, "TONE");
+      break;
+
     case UiMode::kTestDuty:
       std::snprintf(out, size, "D:DUTY %3u %s",
                     static_cast<unsigned>(test_duty_),
@@ -837,7 +881,8 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       break;
 
     case UiMode::kTestTone:
-      std::snprintf(out, size, "D:TONE %s", on_off);
+      std::snprintf(out, size, "D:TONE %s %uHz", on_off,
+                    static_cast<unsigned>(settings_.GetToneHz()));
       break;
 
     case UiMode::kTestDot:
@@ -872,6 +917,12 @@ void UiControllerTask::FormatLine2(char* out, size_t size) const {
       (mode_ == UiMode::kVoice && tx_.GetState() == TxState::kTxKeyed);
   if (show_isr_stats) {
     FormatIsrStats(modulator_.GetStats(), out, size);
+    return;
+  }
+
+  if (mode_ == UiMode::kTone) {
+    std::snprintf(out, size, "%uHz",
+                  static_cast<unsigned>(settings_.GetToneHz()));
     return;
   }
 

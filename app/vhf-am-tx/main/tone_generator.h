@@ -12,7 +12,7 @@
 
 namespace transmitter_system {
 
-/// 700Hz sine with a raised-cosine keying envelope.
+/// Sine tone (kToneHzMin..kToneHzMax, see SetFrequencyHz()) with a raised-cosine keying envelope.
 ///
 /// Runs entirely inside the 25kHz ISR. A phase accumulator drives a 256 entry
 /// table; no interpolation, because 256 points already put THD below -48dB
@@ -49,6 +49,12 @@ class ToneGenerator {
   /// this to know when an element has really finished sounding.
   bool IRAM_ATTR IsSilent() const { return !key_down_ && envelope_index_ == 0; }
 
+  /// Picks the pitch in Hz, clamped to kToneHzMin..kToneHzMax. Only change
+  /// this while nothing is being sent, so the ISR never sees the phase step
+  /// change in the middle of a tone.
+  void SetFrequencyHz(uint16_t hz);
+  uint16_t GetFrequencyHz() const { return tone_hz_; }
+
   /// Only change this while nothing is being sent.
   void SetKeyingMode(KeyingMode mode) { keying_mode_ = mode; }
   KeyingMode GetKeyingMode() const { return keying_mode_; }
@@ -66,6 +72,8 @@ class ToneGenerator {
   float envelope_table_[hardware_config::kEnvelopeSamples + 1];
 
   uint32_t phase_;
+  uint32_t phase_increment_;
+  uint16_t tone_hz_;
   uint32_t envelope_index_;
   bool key_down_;
   // Tone amplitude in units of x: kXGainA2a (0.912 = 80% modulation / 0.877

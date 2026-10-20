@@ -39,6 +39,7 @@ inline esp_err_t nvs_set_int(const char* k, T v) {
   return ESP_OK;
 }
 inline esp_err_t nvs_set_u8(nvs_handle_t, const char* k, uint8_t v) { return nvs_set_int(k, v); }
+inline esp_err_t nvs_set_u16(nvs_handle_t, const char* k, uint16_t v) { return nvs_set_int(k, v); }
 inline esp_err_t nvs_set_u32(nvs_handle_t, const char* k, uint32_t v) { return nvs_set_int(k, v); }
 inline esp_err_t nvs_set_str(nvs_handle_t, const char* k, const char* v) {
   std::lock_guard<std::mutex> l(g_nvs.m);
@@ -59,6 +60,13 @@ inline esp_err_t nvs_get_u8(nvs_handle_t, const char* k, uint8_t* out) {
   auto it = g_nvs.kv.find(k);
   if (it == g_nvs.kv.end()) return ESP_ERR_NVS_NOT_FOUND;
   *out = static_cast<uint8_t>(std::stoul(it->second));
+  return ESP_OK;
+}
+inline esp_err_t nvs_get_u16(nvs_handle_t, const char* k, uint16_t* out) {
+  std::lock_guard<std::mutex> l(g_nvs.m);
+  auto it = g_nvs.kv.find(k);
+  if (it == g_nvs.kv.end()) return ESP_ERR_NVS_NOT_FOUND;
+  *out = static_cast<uint16_t>(std::stoul(it->second));
   return ESP_OK;
 }
 inline esp_err_t nvs_get_u32(nvs_handle_t, const char*, uint32_t*) { return ESP_ERR_NVS_NOT_FOUND; }

@@ -192,6 +192,8 @@ bool TransmitterSystem::InitializeHardware() {
   // Signal path. Tables first, then the LEDC output, then the tick.
   tone_.Initialize();
   voice_.Initialize();
+  tone_.SetFrequencyHz(settings_.GetToneHz());
+  ui_task_.SetToneGenerator(&tone_);
   keyer_.SetToneGenerator(&tone_);
   keyer_.SetWpm(settings_.GetCwWpm());
 

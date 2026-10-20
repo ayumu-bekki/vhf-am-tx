@@ -25,6 +25,11 @@ $CXX $FLAGS -o /tmp/test_keyer test_keyer.cc \
 /tmp/test_keyer
 
 echo
+echo "=== tone pitch ==="
+$CXX $FLAGS -o /tmp/test_tone test_tone.cc $MAIN/tone_generator.cc
+/tmp/test_tone
+
+echo
 echo "=== ARDF scheduler ==="
 $CXX $FLAGS -o /tmp/test_ardf test_ardf.cc fakes.cc \
     $MAIN/morse.cc $MAIN/tone_generator.cc $MAIN/cw_keyer.cc \

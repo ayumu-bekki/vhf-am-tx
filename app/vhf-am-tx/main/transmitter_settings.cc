@@ -26,7 +26,8 @@ TransmitterSettings::TransmitterSettings()
       callsign_{},  // unset until loaded or entered
       ardf_id_(static_cast<morse::ArdfId>(hardware_config::kArdfIdDefault)),
       cw_wpm_(hardware_config::kCwWpmDefault),
-      power_(hardware_config::kPowerDefault) {}
+      power_(hardware_config::kPowerDefault),
+      tone_hz_(hardware_config::kToneHzDefault) {}
 
 TransmitterSettings::~TransmitterSettings() {
   if (writer_task_) {
@@ -77,11 +78,13 @@ bool TransmitterSettings::Load() {
   uint8_t ardf_id = static_cast<uint8_t>(ardf_id_);
   uint8_t wpm = cw_wpm_;
   uint8_t power = power_;
+  uint16_t tone_hz = tone_hz_;
 
   nvs_get_u32(read_handle, kKeyFrequency, &freq);
   nvs_get_u8(read_handle, kKeyArdfId, &ardf_id);
   nvs_get_u8(read_handle, kKeyCwWpm, &wpm);
   nvs_get_u8(read_handle, kKeyPower, &power);
+  nvs_get_u16(read_handle, kKeyToneHz, &tone_hz);
 
   // Say where the callsign came from: a title screen without one is
   // otherwise indistinguishable from a failed read.
@@ -121,6 +124,11 @@ bool TransmitterSettings::Load() {
 
   power_ = power < hardware_config::kPowerCount ? power
                                                : hardware_config::kPowerDefault;
+
+  tone_hz_ = (tone_hz >= hardware_config::kToneHzMin &&
+              tone_hz <= hardware_config::kToneHzMax)
+                 ? tone_hz
+                 : hardware_config::kToneHzDefault;
 
   ESP_LOGI(kTag,
            "Settings loaded: freq=%u call=%s ardf=%u wpm=%u", frequency_hz_, callsign_, static_cast<uint8_t>(ardf_id_), cw_wpm_);
@@ -231,6 +239,7 @@ bool TransmitterSettings::Commit() {
   uint8_t ardf_id;
   uint8_t cw_wpm;
   uint8_t power;
+  uint16_t tone_hz;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     frequency_hz = frequency_hz_;
@@ -238,6 +247,7 @@ bool TransmitterSettings::Commit() {
     ardf_id = static_cast<uint8_t>(ardf_id_);
     cw_wpm = cw_wpm_;
     power = power_;
+    tone_hz = tone_hz_;
     dirty_.store(false);
   }
 
@@ -250,6 +260,7 @@ bool TransmitterSettings::Commit() {
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyArdfId, ardf_id);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyCwWpm, cw_wpm);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyPower, power);
+  if (err == ESP_OK) err = nvs_set_u16(nvs_handle_, kKeyToneHz, tone_hz);
   if (err == ESP_OK) err = nvs_commit(nvs_handle_);
 
   if (err != ESP_OK) {
@@ -336,6 +347,16 @@ void TransmitterSettings::SetPower(uint8_t power) {
     return;
   }
   power_ = power;
+  MarkDirty();
+}
+
+void TransmitterSettings::SetToneHz(uint16_t hz) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (hz < hardware_config::kToneHzMin || hz > hardware_config::kToneHzMax ||
+      tone_hz_ == hz) {
+    return;
+  }
+  tone_hz_ = hz;
   MarkDirty();
 }
 

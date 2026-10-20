@@ -96,6 +96,30 @@ int main() {
     check(g_nvs.kv["cw_wpm"] == "12", "stored value is the latest one");
   }
 
+  printf("\n--- tone pitch is stored and range checked ---\n");
+  {
+    TransmitterSettings s;
+    s.Load();
+    check(s.GetToneHz() == 698, "default is 698Hz");
+    s.SetToneHz(2094);
+    s.SetToneHz(439);
+    check(s.GetToneHz() == 698, "out of range ignored");
+    s.SetToneHz(1000);
+    s.Tick(true);
+    SleepMs(300);
+    check(g_nvs.kv["tone_hz"] == "1000", "stored under tone_hz");
+    TransmitterSettings s2;
+    s2.Load();
+    check(s2.GetToneHz() == 1000, "read back after a reload");
+    g_nvs.kv["tone_hz"] = "5000";
+    TransmitterSettings s3;
+    s3.Load();
+    check(s3.GetToneHz() == 698, "corrupt stored value falls back to 698Hz");
+    s.SetToneHz(698);
+    s.Tick(true);
+    SleepMs(300);
+  }
+
   printf("\n--- callsign: only 6 characters of A-Z / 0-9 are accepted ---\n");
   {
     check(TransmitterSettings::IsValidCallsign("JL1HMT"), "JL1HMT accepted");
