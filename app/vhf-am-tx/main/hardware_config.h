@@ -94,11 +94,11 @@ constexpr float kModKNom = kVDrainCarrier / (kModGain * kVddPwm);
 //   kModKCal = (duty / 256) * 3.6 / V_measured
 // then rebuild. It is deliberately not stored in NVS. Anything outside +-5% of
 // nominal means a wrong part or rail, not something to calibrate away.
-constexpr float kModKCal = 0.3295f;  // final stage connected, C5 refitted: 84 -> 3.45V, 0.3158*3.6/3.45
+constexpr float kModKCal = 0.3394f;  // v0.1 board, dummy load: 84 -> 3.48V, (84/256)*3.6/3.48
 constexpr float kModKCalMin = kModKNom * 0.95f;
 constexpr float kModKCalMax = kModKNom * 1.05f;
 
-// Duty at x = 0 (3.6V at the drain): 84 with the calibration above.
+// Duty at x = 0 (3.6V at the drain): 87 with the calibration above.
 constexpr uint32_t kDutyCarrier =
     static_cast<uint32_t>(kModKCal * static_cast<float>(kPwmFullScale) + 0.5f);
 
@@ -111,7 +111,7 @@ constexpr uint32_t kDutyHardMax = 187;
 
 // Ceiling actually used by every path. The calibration can only lower it:
 // a modulator with more gain than nominal reaches 7.75V at a smaller duty.
-//   floor(7.75 / 3.6 * 256 * kModKCal) = 181 with kModKCal = 0.3295
+//   floor(7.75 / 3.6 * 256 * kModKCal) = 187 with kModKCal = 0.3394
 constexpr uint32_t kDutyCalMax = static_cast<uint32_t>(
     kVDrainHardLimit / kVDrainCarrier * static_cast<float>(kPwmFullScale) *
     kModKCal);
@@ -122,7 +122,7 @@ static_assert(kDutyLimit <= kDutyHardMax, "kDutyLimit above the absolute ceiling
 // Compile-time self-test. A mismatch here stops the build instead of putting
 // too much on the drain.
 static_assert(kModGain > 3.19f && kModGain < 3.21f, "MOD_GAIN must be 3.2");
-static_assert(kDutyCarrier == 84, "carrier duty must be 84 for kModKCal 0.3295");
+static_assert(kDutyCarrier == 87, "carrier duty must be 87 for kModKCal 0.3394");
 static_assert(kDutyCarrier < kDutyLimit, "carrier must sit below the ceiling");
 static_assert(kDutyHardMax ==
                   static_cast<uint32_t>(kVDrainHardLimit *
@@ -158,9 +158,9 @@ constexpr uint32_t CarrierDuty(uint8_t index) {
                                    static_cast<float>(kPwmFullScale) +
                                0.5f);
 }
-static_assert(CarrierDuty(0) == 84 && CarrierDuty(1) == 49 &&
+static_assert(CarrierDuty(0) == 87 && CarrierDuty(1) == 50 &&
                   CarrierDuty(2) == 22,
-              "carrier duty per stage must be 84 / 49 / 22");
+              "carrier duty per stage must be 87 / 50 / 22");
 
 // ============================================================================
 // Debug test modes (spec 12)
@@ -177,7 +177,7 @@ constexpr bool kDebugModesEnabled = false;
 constexpr int64_t kBurstPeriodMs = 60000;
 constexpr int64_t kBurstOnMs = 5000;
 
-// D:CARR "P" level: carrier duty x 1.8 (84 -> 152), clamped by kDutyLimit.
+// D:CARR "P" level: carrier duty x 1.8 (87 -> 157), clamped by kDutyLimit.
 // It heats the final stage, so it switches itself off after 3 seconds.
 constexpr float kCarrierPeakFactor = 1.8f;
 constexpr int64_t kCarrierPeakMaxMs = 3000;
