@@ -398,7 +398,7 @@ constexpr uint32_t kNvsWriteDelayMs = 3000;
 // ============================================================================
 
 // 100kHz: the bus may rely on weak internal pull-ups (no external ones on the
-// AQM0802A/Si5351A modules), and 400kHz edges are too slow to read reliably.
+// AQM1602Y/Si5351A modules), and 400kHz edges are too slow to read reliably.
 constexpr uint32_t kI2cFrequencyHz = 100000;
 constexpr uint32_t kI2cBusStabilizeDelayMs = 100;
 

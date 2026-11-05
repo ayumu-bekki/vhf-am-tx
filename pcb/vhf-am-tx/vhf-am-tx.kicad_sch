@@ -50105,7 +50105,7 @@
 				)
 			)
 		)
-		(property "Value" "AQM0802A-RN-GBW_Pin"
+		(property "Value" "AQM1602Y_Pin"
 			(at 165.1 97.79 90)
 			(show_name no)
 			(do_not_autoplace no)
