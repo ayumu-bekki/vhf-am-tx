@@ -194,6 +194,8 @@ bool TransmitterSystem::InitializeHardware() {
   voice_.Initialize();
   tone_.SetFrequencyHz(settings_.GetToneHz());
   ui_task_.SetToneGenerator(&tone_);
+  ui_task_.SetAdcSampler(&adc_);
+  ui_task_.SetVoiceDsp(&voice_);
   keyer_.SetToneGenerator(&tone_);
   keyer_.SetWpm(settings_.GetCwWpm());
 

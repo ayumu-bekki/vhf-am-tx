@@ -4,6 +4,7 @@
 
 #include "ui_controller_task.h"
 
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 
@@ -119,8 +120,9 @@ void UiControllerTask::Initialize() {
   ESP_LOGI(kTag, "Start UiControllerTask");
 
   // The saved mode is not restored: the machine always comes up in VOICE,
-  // idle (spec 9.6). Frequency, callsign, ID and WPM are still restored.
-  mode_ = UiMode::kVoice;
+  // idle (spec 9.6), or in the first mode built in when VOICE is not.
+  // Frequency, callsign, ID and WPM are still restored.
+  mode_ = FirstMode();
   pending_frequency_hz_ = settings_.GetFrequencyHz();
   if (settings_.HasCallsign()) {
     std::memcpy(callsign_, settings_.GetCallsign(), sizeof(callsign_));
@@ -133,6 +135,7 @@ void UiControllerTask::Initialize() {
   // transmit sequence decides when the carrier appears.
   si5351a_.SetFrequency(Si5351A::Clk::kClk0, pending_frequency_hz_);
   ApplyTxSettings();
+  ApplyMicGain();
 
   // Title screen for a moment; a button press dismisses it.
   splash_until_ms_ = NowMs() + hardware_config::kBootTitleMs;
@@ -199,11 +202,14 @@ void UiControllerTask::DispatchEvent(const ButtonEvent& event) {
   }
 }
 
-/// Modes left out by menuconfig (ARDF, CW, test modes) are skipped by
-/// SW_MODE. Without ARDF the ID and WPM modes go with it; the callsign editor
-/// always stays.
+/// Modes left out by menuconfig (VOICE, ARDF, CW, test modes) are skipped by
+/// SW_MODE. Without VOICE the MIC GAIN mode goes with it; without ARDF the ID
+/// and WPM modes do. The callsign editor always stays.
 bool UiControllerTask::IsModeEnabled(UiMode mode) {
   switch (mode) {
+    case UiMode::kVoice:
+    case UiMode::kMicGain:
+      return hardware_config::kVoiceModeEnabled;
     case UiMode::kArdf:
     case UiMode::kIdent:
     case UiMode::kWpm:
@@ -225,6 +231,17 @@ bool UiControllerTask::IsModeEnabled(UiMode mode) {
   }
 }
 
+/// The mode the machine comes up in: VOICE, or the first one after it that is
+/// built in. FREQ is always there, so this always finds one.
+UiMode UiControllerTask::FirstMode() {
+  for (uint8_t i = 0; i < static_cast<uint8_t>(UiMode::kCount); ++i) {
+    if (IsModeEnabled(static_cast<UiMode>(i))) {
+      return static_cast<UiMode>(i);
+    }
+  }
+  return UiMode::kFrequency;
+}
+
 UiMode UiControllerTask::NextMode(UiMode mode) {
   uint8_t next = static_cast<uint8_t>(mode);
   for (uint8_t i = 0; i < static_cast<uint8_t>(UiMode::kCount); ++i) {
@@ -233,7 +250,7 @@ UiMode UiControllerTask::NextMode(UiMode mode) {
       return static_cast<UiMode>(next);
     }
   }
-  return UiMode::kVoice;
+  return FirstMode();
 }
 
 bool UiControllerTask::IsModeSwitchAllowed() const {
@@ -296,6 +313,10 @@ void UiControllerTask::OnFnPlusPress() {
 
     case UiMode::kPower:
       AdjustPower(-1);  // up: towards 1.5W (index 0)
+      break;
+
+    case UiMode::kMicGain:
+      AdjustMicGain(+1);
       break;
 
     case UiMode::kCallsign:
@@ -379,6 +400,10 @@ void UiControllerTask::OnFnMinusPress() {
       AdjustPower(+1);  // down: towards 100mW
       break;
 
+    case UiMode::kMicGain:
+      AdjustMicGain(-1);
+      break;
+
     case UiMode::kCallsign:
       IncrementCallsignChar();
       break;
@@ -424,6 +449,7 @@ void UiControllerTask::OnFnRepeat(ButtonEvent::Button button) {
   switch (mode_) {
     case UiMode::kFrequency:
     case UiMode::kPower:
+    case UiMode::kMicGain:
     case UiMode::kCallsign:
     case UiMode::kIdent:
     case UiMode::kWpm:
@@ -463,6 +489,15 @@ void UiControllerTask::EnterMode(UiMode mode) {
 
     case UiMode::kCw:
       tx_.SetKeyedSource(ModulationSource::kCwKeyer);
+      break;
+
+    case UiMode::kMicGain:
+      // Start the level display from nothing rather than from whatever
+      // accumulated while another mode was up.
+      if (adc_) {
+        adc_->ConsumeMicPeak();
+      }
+      mic_peak_shown_ = 0;
       break;
 
     case UiMode::kCallsign:
@@ -696,6 +731,27 @@ void UiControllerTask::AdjustTone(int direction, bool repeat) {
   }
 }
 
+void UiControllerTask::AdjustMicGain(int direction) {
+  // 1dB a step, clamped at both ends like the WPM.
+  const int db = static_cast<int>(settings_.GetMicGainDb()) + direction;
+  if (db < hardware_config::kMicGainDbMin ||
+      db > hardware_config::kMicGainDbMax) {
+    return;
+  }
+  settings_.SetMicGainDb(static_cast<uint8_t>(db));
+  ApplyMicGain();
+}
+
+/// Hands the saved gain to the voice chain. A single float store, so it is
+/// safe while the ISR runs, though a mode switch is refused while
+/// transmitting anyway.
+void UiControllerTask::ApplyMicGain() {
+  if (voice_) {
+    voice_->SetInputGain(
+        std::pow(10.0f, static_cast<float>(settings_.GetMicGainDb()) / 20.0f));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Test modes
 // ---------------------------------------------------------------------------
@@ -851,6 +907,11 @@ void UiControllerTask::FormatLine1(char* out, size_t size) const {
       std::snprintf(out, size, "%s", kPowerLabel[settings_.GetPower()]);
       break;
 
+    case UiMode::kMicGain:
+      std::snprintf(out, size, "MIC GAIN %2udB",
+                    static_cast<unsigned>(settings_.GetMicGainDb()));
+      break;
+
     case UiMode::kCallsign:
       std::snprintf(out, size, "CS:%s", callsign_);
       break;
@@ -920,6 +981,16 @@ void UiControllerTask::FormatLine2(char* out, size_t size) const {
     return;
   }
 
+  // Microphone peak in raw ADC counts either side of the bias ("IN  213").
+  // Ordinary speech at 5cm read about 30 on the first board. The value is
+  // held by UpdateDisplay() so a syllable stays readable for a moment.
+  if (mode_ == UiMode::kMicGain) {
+    std::snprintf(out, size, "IN %4u",
+                  static_cast<unsigned>(mic_peak_shown_ > 9999 ? 9999
+                                                               : mic_peak_shown_));
+    return;
+  }
+
   if (mode_ == UiMode::kTone) {
     std::snprintf(out, size, "%uHz",
                   static_cast<unsigned>(settings_.GetToneHz()));
@@ -962,6 +1033,14 @@ void UiControllerTask::UpdateDisplay() {
     // Blank when no callsign has been saved.
     std::snprintf(line2, sizeof(line2), "%s", settings_.GetCallsign());
   } else {
+    if (mode_ == UiMode::kMicGain && adc_) {
+      // Peak hold: the new peak, or 3/4 of the last one shown, whichever is
+      // larger. At the 100ms refresh that falls away in under a second.
+      const uint32_t peak = adc_->ConsumeMicPeak();
+      const uint32_t decayed = mic_peak_shown_ * 3 / 4;
+      mic_peak_shown_ = peak > decayed ? peak : decayed;
+    }
+
     FormatLine1(line1, sizeof(line1));
     FormatLine2(line2, sizeof(line2));
 

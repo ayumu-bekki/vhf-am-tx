@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <string_view>
 
+#include "adc_sampler.h"
 #include "ardf_scheduler.h"
 #include "button_event.h"
 #include "cw_keyer.h"
@@ -20,6 +21,7 @@
 #include "task.h"
 #include "transmitter_settings.h"
 #include "tx_controller.h"
+#include "voice_dsp.h"
 
 namespace transmitter_system {
 
@@ -36,6 +38,7 @@ enum class UiMode : uint8_t {
   kArdf,         // A2A, FN+ toggles the run
   kFrequency,    // +-20kHz
   kPower,        // output stage 1.5W / 500mW / 100mW
+  kMicGain,      // A3E microphone input gain in dB, shows the input peak
   kCallsign,     // 6 character editor
   kIdent,        // MOE..MO
   kWpm,          // CW speed, 5..40
@@ -62,6 +65,12 @@ class UiControllerTask final : public Task {
 
   /// The tone generator whose pitch the TONE mode sets.
   void SetToneGenerator(ToneGenerator* tone) { tone_ = tone; }
+
+  /// The ADC whose microphone peak the MIC GAIN mode shows.
+  void SetAdcSampler(AdcSampler* adc) { adc_ = adc; }
+
+  /// The voice chain whose input gain the MIC GAIN mode sets.
+  void SetVoiceDsp(VoiceDsp* voice) { voice_ = voice; }
 
   MessageQueue<ButtonEvent>* GetButtonEventQueue() { return &event_queue_; }
 
@@ -106,11 +115,14 @@ class UiControllerTask final : public Task {
   void UpdateArdfStopHold();
   void UpdateDot();
   static bool IsModeEnabled(UiMode mode);
+  static UiMode FirstMode();
   static UiMode NextMode(UiMode mode);
 
   void AdjustIdent(int direction);
   void AdjustWpm(int direction);
   void AdjustTone(int direction, bool repeat);
+  void AdjustMicGain(int direction);
+  void ApplyMicGain();
   void AdjustTestDuty(int direction);
   float CarrierLevelValue() const;
   void StopTestOutput();
@@ -133,6 +145,12 @@ class UiControllerTask final : public Task {
   Si5351A& si5351a_;
   CwKeyer& keyer_;
   ToneGenerator* tone_ = nullptr;
+  AdcSampler* adc_ = nullptr;
+  VoiceDsp* voice_ = nullptr;
+
+  // Microphone peak as shown, in raw ADC counts. Held and decayed across
+  // refreshes so a syllable stays readable for a moment.
+  uint32_t mic_peak_shown_ = 0;
 
   UiMode mode_;
 

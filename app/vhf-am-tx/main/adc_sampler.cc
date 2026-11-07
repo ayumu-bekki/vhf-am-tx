@@ -50,6 +50,7 @@ AdcSampler::AdcSampler()
       bias_init_count_(0),
       bias_init_sum_(0),
       bias_initialised_(false),
+      mic_peak_(0),
       clip_run_(0),
       clipping_(false),
       battery_count_(0),
@@ -230,6 +231,12 @@ void AdcSampler::PushMicrophoneSample(uint32_t raw) {
   mic_bias_.store(bias, std::memory_order_relaxed);
 
   const float centred = static_cast<float>(raw) - bias;
+
+  const uint32_t swing =
+      static_cast<uint32_t>(centred < 0.0f ? -centred : centred);
+  if (swing > mic_peak_.load(std::memory_order_relaxed)) {
+    mic_peak_.store(swing, std::memory_order_relaxed);
+  }
 
   const uint32_t write = mic_write_index_.load(std::memory_order_relaxed);
   const uint32_t read = mic_read_index_.load(std::memory_order_acquire);

@@ -27,7 +27,8 @@ TransmitterSettings::TransmitterSettings()
       ardf_id_(static_cast<morse::ArdfId>(hardware_config::kArdfIdDefault)),
       cw_wpm_(hardware_config::kCwWpmDefault),
       power_(hardware_config::kPowerDefault),
-      tone_hz_(hardware_config::kToneHzDefault) {}
+      tone_hz_(hardware_config::kToneHzDefault),
+      mic_gain_db_(hardware_config::kMicGainDbDefault) {}
 
 TransmitterSettings::~TransmitterSettings() {
   if (writer_task_) {
@@ -79,12 +80,14 @@ bool TransmitterSettings::Load() {
   uint8_t wpm = cw_wpm_;
   uint8_t power = power_;
   uint16_t tone_hz = tone_hz_;
+  uint8_t mic_gain_db = mic_gain_db_;
 
   nvs_get_u32(read_handle, kKeyFrequency, &freq);
   nvs_get_u8(read_handle, kKeyArdfId, &ardf_id);
   nvs_get_u8(read_handle, kKeyCwWpm, &wpm);
   nvs_get_u8(read_handle, kKeyPower, &power);
   nvs_get_u16(read_handle, kKeyToneHz, &tone_hz);
+  nvs_get_u8(read_handle, kKeyMicGainDb, &mic_gain_db);
 
   // Say where the callsign came from: a title screen without one is
   // otherwise indistinguishable from a failed read.
@@ -129,6 +132,11 @@ bool TransmitterSettings::Load() {
               tone_hz <= hardware_config::kToneHzMax)
                  ? tone_hz
                  : hardware_config::kToneHzDefault;
+
+  mic_gain_db_ = (mic_gain_db >= hardware_config::kMicGainDbMin &&
+                  mic_gain_db <= hardware_config::kMicGainDbMax)
+                     ? mic_gain_db
+                     : hardware_config::kMicGainDbDefault;
 
   ESP_LOGI(kTag,
            "Settings loaded: freq=%u call=%s ardf=%u wpm=%u", frequency_hz_, callsign_, static_cast<uint8_t>(ardf_id_), cw_wpm_);
@@ -240,6 +248,7 @@ bool TransmitterSettings::Commit() {
   uint8_t cw_wpm;
   uint8_t power;
   uint16_t tone_hz;
+  uint8_t mic_gain_db;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     frequency_hz = frequency_hz_;
@@ -248,6 +257,7 @@ bool TransmitterSettings::Commit() {
     cw_wpm = cw_wpm_;
     power = power_;
     tone_hz = tone_hz_;
+    mic_gain_db = mic_gain_db_;
     dirty_.store(false);
   }
 
@@ -261,6 +271,7 @@ bool TransmitterSettings::Commit() {
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyCwWpm, cw_wpm);
   if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyPower, power);
   if (err == ESP_OK) err = nvs_set_u16(nvs_handle_, kKeyToneHz, tone_hz);
+  if (err == ESP_OK) err = nvs_set_u8(nvs_handle_, kKeyMicGainDb, mic_gain_db);
   if (err == ESP_OK) err = nvs_commit(nvs_handle_);
 
   if (err != ESP_OK) {
@@ -357,6 +368,16 @@ void TransmitterSettings::SetToneHz(uint16_t hz) {
     return;
   }
   tone_hz_ = hz;
+  MarkDirty();
+}
+
+void TransmitterSettings::SetMicGainDb(uint8_t db) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (db < hardware_config::kMicGainDbMin ||
+      db > hardware_config::kMicGainDbMax || mic_gain_db_ == db) {
+    return;
+  }
+  mic_gain_db_ = db;
   MarkDirty();
 }
 

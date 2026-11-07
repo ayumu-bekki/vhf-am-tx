@@ -69,6 +69,12 @@ class AdcSampler {
     return mic_bias_.load(std::memory_order_relaxed);
   }
 
+  /// Largest microphone swing either side of the bias since the last call,
+  /// in raw ADC counts. For the level display; 0 until the bias is known.
+  uint32_t ConsumeMicPeak() {
+    return mic_peak_.exchange(0, std::memory_order_relaxed);
+  }
+
   /// True while the input is clipping (spec 3.3).
   bool IsClipping() const { return clipping_.load(std::memory_order_relaxed); }
 
@@ -104,6 +110,9 @@ class AdcSampler {
   uint32_t bias_init_count_;
   uint64_t bias_init_sum_;
   bool bias_initialised_;
+
+  // Peak swing for the level display, read and cleared by ConsumeMicPeak().
+  std::atomic<uint32_t> mic_peak_;
 
   // Clip detection
   uint32_t clip_run_;

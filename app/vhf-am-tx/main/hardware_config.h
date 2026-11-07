@@ -246,8 +246,19 @@ constexpr int kAdcClipRunLength = 3;
 constexpr uint32_t kAdcBiasInitSamples = 5000;  // 200ms at 25kHz
 constexpr float kAdcBiasAlpha = 2.51e-4f;
 
-// Microphone ring buffer between the DMA callback and the 25kHz ISR
-constexpr uint32_t kMicRingSize = 8;
+// Microphone input gain, ahead of the compressor (spec 4.3), in dB. Set from
+// the MIC GAIN mode and stored in NVS. 30dB (about 32x) is what brought
+// ordinary speech at about 30 counts up to the compressor threshold on the
+// first board.
+constexpr uint8_t kMicGainDbMin = 0;
+constexpr uint8_t kMicGainDbMax = 40;
+constexpr uint8_t kMicGainDbDefault = 30;
+
+// Microphone ring buffer between the DMA callback and the 25kHz ISR.
+// One DMA frame (64 conversions, two channels) delivers 32 microphone samples
+// in a burst, so the ring must hold several frames or most of each burst is
+// dropped. 128 = 4 frames, about 5ms of latency at worst.
+constexpr uint32_t kMicRingSize = 128;
 
 // ============================================================================
 // Battery Monitoring (spec 3.6)
@@ -326,9 +337,15 @@ constexpr uint32_t kA1aClkTailMs = 10;
 constexpr uint32_t kA1aClkLeadSamples = kA1aClkLeadMs * kTickHz / 1000;  // 25
 constexpr uint32_t kA1aClkTailSamples = kA1aClkTailMs * kTickHz / 1000;  // 250
 
-// Set by menuconfig: AM Transmitter -> Enable the ARDF mode / the CW mode.
-// Without ARDF the ARDF, ID and WPM modes are left out of the SW_MODE cycle;
-// the callsign editor always stays.
+// Set by menuconfig: AM Transmitter -> Enable the VOICE / ARDF / CW mode.
+// Without VOICE the MIC GAIN mode goes with it. Without ARDF the ARDF, ID and
+// WPM modes are left out of the SW_MODE cycle; the callsign editor always
+// stays.
+#ifdef CONFIG_AM_TX_VOICE_MODE
+constexpr bool kVoiceModeEnabled = true;
+#else
+constexpr bool kVoiceModeEnabled = false;
+#endif
 #ifdef CONFIG_AM_TX_ARDF_MODE
 constexpr bool kArdfModeEnabled = true;
 #else

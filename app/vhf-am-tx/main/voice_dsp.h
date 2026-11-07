@@ -39,8 +39,17 @@ class VoiceDsp {
   /// Returns the modulation input x, already limited to the A3E window.
   float IRAM_ATTR Process(float sample);
 
-  /// Makeup gain applied with the compressor gain (spec 4.3). Defaults to 1;
-  /// nothing in the UI adjusts it yet.
+  /// Linear gain applied to the input, ahead of the compressor. The MIC GAIN
+  /// mode sets it.
+  void SetInputGain(float gain) {
+    input_gain_.store(gain, std::memory_order_relaxed);
+  }
+  float GetInputGain() const {
+    return input_gain_.load(std::memory_order_relaxed);
+  }
+
+  /// Makeup gain applied with the compressor gain (spec 4.3). Fixed at its
+  /// default; the operator adjusts the input gain instead.
   void SetMakeupGain(float gain) {
     makeup_gain_.store(gain, std::memory_order_relaxed);
   }
@@ -69,6 +78,7 @@ class VoiceDsp {
   float attack_coeff_;
   float release_coeff_;
 
+  std::atomic<float> input_gain_;
   std::atomic<float> makeup_gain_;
 
   // Limiter activity over a sliding one second window.

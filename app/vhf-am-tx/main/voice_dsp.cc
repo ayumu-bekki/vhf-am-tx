@@ -91,9 +91,20 @@ constexpr float kCompRatioRecip = 1.0f / kCompRatio;
 constexpr float kCompAttackMs = 5.0f;
 constexpr float kCompReleaseMs = 200.0f;
 
-// Default makeup gain. The operator trims this from the UI; speech peaks only
-// use a few percent of the ADC range (spec 3.2), so some makeup is expected.
-constexpr float kDefaultMakeupGain = 1.0f;
+// Input gain ahead of the compressor, so that its -12dB threshold is reached
+// by real speech. Set from the MIC GAIN mode (hardware_config kMicGainDb*);
+// this is only the value before the settings are applied. Measured on the
+// board (spec 3.2 expected far more): ordinary speech peaks at about 30
+// counts and loud speech at about 130, which 30dB (about 32x) puts at
+// x = 0.47 and 2.0 - ordinary speech a little above the threshold, loud
+// speech compressed.
+constexpr float kDefaultInputGain = 31.6f;
+
+// Default makeup gain, after the compressor. With the default input gain, ordinary
+// speech leaves the compressor at about 0.3 and loud speech at about 0.7;
+// 1.5x lifts those to 0.45-1.0, and the limiter (-0.85 / +1.10) takes the
+// rest.
+constexpr float kDefaultMakeupGain = 1.5f;
 
 // Limiter activity is averaged over one second.
 constexpr uint32_t kActivityWindowSamples = hardware_config::kTickHz;
@@ -115,6 +126,7 @@ VoiceDsp::VoiceDsp()
       envelope_(0.0f),
       attack_coeff_(0.0f),
       release_coeff_(0.0f),
+      input_gain_(kDefaultInputGain),
       makeup_gain_(kDefaultMakeupGain),
       limit_hits_(0),
       limit_samples_(0),
@@ -149,7 +161,7 @@ void VoiceDsp::Reset() {
 float VoiceDsp::Process(float sample) {
   // 1. Band limit the low end. The analog side already rolls off at 318Hz;
   //    this makes sure nothing DC-ish survives into the EQ.
-  float x = hpf_.Process(sample);
+  float x = hpf_.Process(sample * input_gain_.load(std::memory_order_relaxed));
 
   // 2. EQ - compensate the anti-alias filter and M2 (spec 4.1).
   x = eq_biquad_.Process(x);

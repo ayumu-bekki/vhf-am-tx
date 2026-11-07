@@ -12,6 +12,16 @@ menu "AM Transmitter"
             Disable this for bench testing on USB power or with no battery
             fitted. Leave it enabled for anything that runs from the pack.
 
+    config AM_TX_VOICE_MODE
+        bool "Enable the VOICE mode (A3E, with the MIC GAIN mode)"
+        default y
+        help
+            The VOICE mode is A3E (voice AM) from the microphone on D1: the
+            signal is on the air while SW1 is held. The MIC GAIN mode, which
+            sets the microphone input gain and shows the input level, only
+            makes sense with it and is left out when this is off. The
+            machine then comes up in the first mode that is still enabled.
+
     config AM_TX_ARDF_MODE
         bool "Enable the ARDF mode (with the ARDF ID and CW speed modes)"
         default y

@@ -77,6 +77,11 @@ class TransmitterSettings final {
   uint16_t GetToneHz() const { return tone_hz_; }
   void SetToneHz(uint16_t hz);
 
+  /// Microphone input gain in dB, kMicGainDbMin..kMicGainDbMax
+  /// (key "mic_gain").
+  uint8_t GetMicGainDb() const { return mic_gain_db_; }
+  void SetMicGainDb(uint8_t db);
+
   /// Output stage, 0..kPowerCount-1 (spec 9.6, key "power").
   uint8_t GetPower() const { return power_; }
   void SetPower(uint8_t power);
@@ -111,6 +116,7 @@ class TransmitterSettings final {
   uint8_t cw_wpm_;
   uint8_t power_;
   uint16_t tone_hz_;
+  uint8_t mic_gain_db_;
 
   static constexpr const char* kNvsNamespace = "amtx";
   static constexpr const char* kKeyLegacyMode = "mode";
@@ -120,6 +126,7 @@ class TransmitterSettings final {
   static constexpr const char* kKeyCwWpm = "cw_wpm";
   static constexpr const char* kKeyPower = "power";
   static constexpr const char* kKeyToneHz = "tone_hz";
+  static constexpr const char* kKeyMicGainDb = "mic_gain";
   // Written by firmware that stored the calibrated carrier duty. The duty is
   // fixed by the modulator circuit (hardware_config.h) and never persisted
   // now; a stale value read back from an older board would put the wrong
