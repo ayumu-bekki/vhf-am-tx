@@ -21956,7 +21956,7 @@
 				)
 			)
 		)
-		(property "Value" "0.01μ"
+		(property "Value" "0.047µ"
 			(at 220.9736 132.08 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -37782,7 +37782,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-251-3_Vertical"
+		(property "Footprint" "Package_TO_SOT_SMD:TO-252-2"
 			(at 304.8 78.74 0)
 			(hide yes)
 			(show_name no)
