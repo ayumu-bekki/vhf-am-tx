@@ -136,7 +136,7 @@ bool Modulator::Initialize() {
   ESP_LOGI(kTag, "LEDC ready: %u Hz, %u bit, GPIO%d, CPU %u MHz",
            hardware_config::kPwmHz, hardware_config::kPwmBits,
            hardware_config::kPwmPin, g_cpu_mhz);
-  // One line that tells a build for the old modulator (R8 20k: gain 3.00,
+  // One line that tells a build for the old modulator (R6 20k: gain 3.00,
   // carrier 93) from this one at a glance.
   ESP_LOGI(kTag, "MOD_GAIN=%.2f K=%.5f carrier=%u hard_max=%u",
            static_cast<double>(hardware_config::kModGain),

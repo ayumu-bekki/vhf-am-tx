@@ -8,7 +8,7 @@
 	(property "Reference" "REF**"
 		(at -5.2 -4.7 0)
 		(layer "F.SilkS")
-		(uuid "875827a3-6d5f-45f9-8cd9-44befefc7ff6")
+		(uuid "afa72f81-6c26-4ebd-a92d-670c6de7ffca")
 		(effects
 			(font
 				(size 1 1)
@@ -19,7 +19,7 @@
 	(property "Value" "Coax_RG174_SolderDirect"
 		(at -2 4.9 0)
 		(layer "F.Fab")
-		(uuid "6268812f-6138-4b5d-8c5b-4d9993e0bbb7")
+		(uuid "76a0a5c9-7eef-43c1-a951-e040d42901cb")
 		(effects
 			(font
 				(size 1 1)
@@ -31,7 +31,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "e7e9b823-e8c6-43aa-8d4d-eaa497732513")
+		(uuid "616f4872-34a9-488f-8c6d-3fc4c7873659")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -43,7 +43,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "8097208b-dfad-4bf7-a36c-7aaae91f7785")
+		(uuid "9e178b93-8405-4a07-84aa-7d03976e71da")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -62,7 +62,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "8584ea6a-33bb-4c7d-89c6-a9694b21e413")
+		(uuid "2fdddce8-eca9-48e0-acdc-4dede397e119")
 	)
 	(fp_rect
 		(start -0.6 -0.24)
@@ -73,12 +73,12 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "7976d50a-12b9-4a52-b575-46372906e0b5")
+		(uuid "957818f7-61c5-48bd-8c7c-84adde14ffaa")
 	)
 	(fp_text user "${REFERENCE}"
 		(at -4.6 0 0)
 		(layer "F.Fab")
-		(uuid "d81d0679-2fdb-404f-8260-bf7a5622dfd0")
+		(uuid "ebef0256-461c-4424-a53a-1770f87a309c")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -90,14 +90,14 @@
 		(at 0 0)
 		(size 1.6 1.3)
 		(layers "F.Cu" "F.Mask" "F.Paste")
-		(uuid "8bcdc4c9-83fb-4931-9abd-ce876387774b")
+		(uuid "74af5aa4-67d2-4736-add5-f2ddf1a059a8")
 	)
 	(pad "2" smd rect
 		(at -4.6 0)
 		(size 4.4 3.6)
 		(layers "F.Cu" "F.Mask" "F.Paste")
-		(zone_connect 2)
-		(uuid "f1986a5f-0b14-4c13-9594-54cc852bbf07")
+		(zone_connect 1)
+		(uuid "07f2471e-ed61-44e7-a6a4-2e08cf691c97")
 	)
 	(embedded_fonts no)
 )
