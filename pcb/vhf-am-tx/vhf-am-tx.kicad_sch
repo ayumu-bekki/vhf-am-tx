@@ -9352,7 +9352,7 @@
 	)
 	(wire
 		(pts
-			(xy 223.52 135.89) (xy 226.06 135.89)
+			(xy 220.98 135.89) (xy 226.06 135.89)
 		)
 		(stroke
 			(width 0)
@@ -10262,7 +10262,7 @@
 	)
 	(wire
 		(pts
-			(xy 198.12 135.89) (xy 218.44 135.89)
+			(xy 198.12 135.89) (xy 215.9 135.89)
 		)
 		(stroke
 			(width 0)
@@ -20462,7 +20462,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "10μF"
+		(property "Value" "10μ"
 			(at 212.09 140.9635 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21936,7 +21936,7 @@
 	)
 	(symbol
 		(lib_id "Device:C_Small")
-		(at 220.98 135.89 270)
+		(at 218.44 135.89 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -21947,7 +21947,7 @@
 		(fields_autoplaced yes)
 		(uuid "39ca4433-2f53-45ca-8e73-af86fb0ff1bc")
 		(property "Reference" "C30"
-			(at 220.9736 129.54 90)
+			(at 218.4336 129.54 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21956,8 +21956,8 @@
 				)
 			)
 		)
-		(property "Value" "0.047µ"
-			(at 220.9736 132.08 90)
+		(property "Value" "0.047μ"
+			(at 218.4336 132.08 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21967,7 +21967,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21978,7 +21978,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21989,7 +21989,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22000,7 +22000,7 @@
 			)
 		)
 		(property "MPN" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22011,7 +22011,7 @@
 			)
 		)
 		(property "Manufacturer" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22022,7 +22022,7 @@
 			)
 		)
 		(property "Part Type" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22033,7 +22033,7 @@
 			)
 		)
 		(property "Priority" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22044,7 +22044,7 @@
 			)
 		)
 		(property "Rating" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22055,7 +22055,7 @@
 			)
 		)
 		(property "SKU" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22066,7 +22066,7 @@
 			)
 		)
 		(property "Status" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22077,7 +22077,7 @@
 			)
 		)
 		(property "Temperature" ""
-			(at 220.98 135.89 0)
+			(at 218.44 135.89 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22088,7 +22088,7 @@
 			)
 		)
 		(property "Sim.Library" ""
-			(at 220.98 135.89 90)
+			(at 218.44 135.89 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22099,7 +22099,7 @@
 			)
 		)
 		(property "Sim.Name" ""
-			(at 220.98 135.89 90)
+			(at 218.44 135.89 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25668,7 +25668,7 @@
 				)
 			)
 		)
-		(property "Value" "1.0μ"
+		(property "Value" "1μ"
 			(at 143.5163 86.36 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -45443,7 +45443,7 @@
 				)
 			)
 		)
-		(property "Value" "1.0μ"
+		(property "Value" "1μ"
 			(at 151.1363 88.9 90)
 			(show_name no)
 			(do_not_autoplace no)
