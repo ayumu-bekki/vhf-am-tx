@@ -25,7 +25,7 @@ int main() {
   printf("--- constants (T1-T3) ---\n");
   Check(std::fabs(hardware_config::kModGain - 3.2f) < 1e-6f, "T1 MOD_GAIN == 3.2");
   Check(std::lround(hardware_config::kModKNom * 256.0f) == 87, "T2 round(K_nom * 256) == 87");
-  Check(hardware_config::kDutyCarrier == 87, "kDutyCarrier == 87 (calibrated)");
+  Check(hardware_config::kDutyCarrier == 86, "kDutyCarrier == 86 (calibrated)");
   const uint32_t derived = static_cast<uint32_t>(std::floor(
       hardware_config::kVDrainHardLimit * 256.0f /
       (hardware_config::kVddPwm * hardware_config::kModGain)));
@@ -38,14 +38,14 @@ int main() {
   const uint32_t old_hard = static_cast<uint32_t>(std::floor(7.75f * 256.0f / (3.3f * old_gain)));
   Check(old_hard == 200 && old_hard != kDutyHardMax, "20k would give 200: the constants really are for 22k");
 
-  Check(kDutyLimit == 187 && kDutyLimit <= kDutyHardMax,
-        "cal: kDutyLimit == 187 and <= 187");
+  Check(kDutyLimit == 184 && kDutyLimit <= kDutyHardMax,
+        "cal: kDutyLimit == 184 and <= 187");
   printf("\n--- mapping (T4-T8, dither off) ---\n");
   struct { float x; uint32_t want; const char* name; } pts[] = {
-      {0.0f, 87, "T4 x=0"},        {-1.0f, 0, "T5 x=-1"},
-      {-0.85f, 13, "T6 x=-0.85"},  {0.912f, 166, "T7 x=+0.912"},
-      {1.10f, 182, "T8 x=+1.10"},  {1.14f, 186, "x=+1.14"},
-      {1.5f, 187, "x=+1.5 clamped"},
+      {0.0f, 86, "T4 x=0"},        {-1.0f, 0, "T5 x=-1"},
+      {-0.85f, 13, "T6 x=-0.85"},  {0.912f, 164, "T7 x=+0.912"},
+      {1.10f, 180, "T8 x=+1.10"},  {1.14f, 183, "x=+1.14"},
+      {1.5f, 184, "x=+1.5 clamped"},
   };
   for (auto& p : pts) {
     char buf[64];
@@ -63,7 +63,7 @@ int main() {
       if (d < prev) monotonic = false;
       prev = d;
     }
-    Check(in_range, "T9 x in [-2, +3]: every duty within 0..187");
+    Check(in_range, "T9 x in [-2, +3]: every duty within 0..184");
     Check(monotonic, "T9 non-decreasing in x");
   }
 
@@ -71,18 +71,18 @@ int main() {
   {
     float dither = 0.0f;
     double sum = 0;
-    bool only_86_87 = true;
+    bool only_85_86 = true;
     for (int i = 0; i < 10000; ++i) {
       const uint32_t d = XToDuty(0.0f, &dither);
       sum += d;
-      if (d != 86 && d != 87) only_86_87 = false;
+      if (d != 85 && d != 86) only_85_86 = false;
     }
     const double mean = sum / 10000.0;
     char buf[80];
     snprintf(buf, sizeof(buf), "T10 mean %.3f (want %.2f +-0.01)", mean,
              hardware_config::kModKCal * 256.0f);
     Check(std::fabs(mean - hardware_config::kModKCal * 256.0f) < 0.01, buf);
-    Check(only_86_87, "T10 only 86 and 87 are produced");
+    Check(only_85_86, "T10 only 85 and 86 are produced");
   }
   {
     float dither = 0.0f;
@@ -91,39 +91,39 @@ int main() {
       if (XToDuty(3.0f, &dither) != kDutyLimit) pinned = false;
     }
     const uint32_t after = XToDuty(0.0f, &dither);
-    Check(pinned, "T11 x=+3 is held at 187");
-    Check(after == 86 || after == 87, "T11 first sample after the clamp is 86/87");
+    Check(pinned, "T11 x=+3 is held at 184");
+    Check(after == 85 || after == 86, "T11 first sample after the clamp is 85/86");
     float d2 = 0.0f;
     for (int i = 0; i < 100; ++i) XToDuty(-3.0f, &d2);
     const uint32_t after2 = XToDuty(0.0f, &d2);
-    Check(after2 == 86 || after2 == 87, "T11 same after a low clamp");
+    Check(after2 == 85 || after2 == 86, "T11 same after a low clamp");
   }
 
   printf("\n--- raw duty ceiling (T12, T14) ---\n");
   {
     // What SetFixedDuty() and the final write feed through ClampDuty().
-    struct { uint32_t in, want; } c[] = {{0, 0},     {87, 87},   {187, 187},
-                                         {188, 187}, {200, 187}, {255, 187},
-                                         {100000, 187}};
+    struct { uint32_t in, want; } c[] = {{0, 0},     {86, 86},   {184, 184},
+                                         {185, 184}, {187, 184}, {200, 184},
+                                         {255, 184}, {100000, 184}};
     bool ok = true;
     for (auto& e : c) {
       if (ClampDuty(e.in) != e.want) ok = false;
     }
-    Check(ok, "T12 0/87/187 pass; 188/200/255/100000 -> 187");
+    Check(ok, "T12 0/86/184 pass; 185/187/200/255/100000 -> 184");
     uint32_t peak = 0;
     for (uint32_t d = 0; d <= 400; ++d) {
       const uint32_t v = ClampDuty(d);
       if (v > peak) peak = v;
     }
-    Check(peak == 187, "T14 a 0..400 duty sweep never exceeds 187");
+    Check(peak == 184, "T14 a 0..400 duty sweep never exceeds 184");
   }
 
   printf("\n--- output stages (P1-P4) ---\n");
   {
     using hardware_config::CarrierDuty;
     using hardware_config::PowerFactor;
-    Check(CarrierDuty(0) == 87 && CarrierDuty(1) == 50 && CarrierDuty(2) == 22,
-          "P1 carrier duty 87 / 50 / 22 (1.5W / 500mW / 100mW)");
+    Check(CarrierDuty(0) == 86 && CarrierDuty(1) == 50 && CarrierDuty(2) == 22,
+          "P1 carrier duty 86 / 50 / 22 (1.5W / 500mW / 100mW)");
     Check(XToDuty(0.0f, nullptr, PowerFactor(1)) == 50 &&
               XToDuty(0.0f, nullptr, PowerFactor(2)) == 22,
           "P1 XToDuty(0, s) agrees with CarrierDuty");

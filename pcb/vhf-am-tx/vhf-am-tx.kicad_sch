@@ -41846,7 +41846,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "3p"
+		(property "Value" "4.7p"
 			(at 377.19 182.8735 0)
 			(show_name no)
 			(do_not_autoplace no)
