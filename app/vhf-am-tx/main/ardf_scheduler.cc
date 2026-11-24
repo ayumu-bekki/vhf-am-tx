@@ -6,6 +6,7 @@
 
 #include <esp_timer.h>
 
+#include <cstdio>
 #include <cstring>
 
 #include "hardware_config.h"
@@ -35,6 +36,13 @@ void SendWithWordGap(CwKeyer* keyer, const char* text) {
   std::strncpy(buf, text, CwKeyer::kMaxTextLength - 1);
   std::strncat(buf, " ", sizeof(buf) - std::strlen(buf) - 1);
   keyer->Send(buf);
+}
+
+// Station identification: "DE <callsign>" followed by a word gap.
+void SendDeCallsign(CwKeyer* keyer, const char* callsign) {
+  char buf[CwKeyer::kMaxTextLength + 1] = {};
+  std::snprintf(buf, sizeof(buf), "DE %s", callsign);
+  SendWithWordGap(keyer, buf);
 }
 }  // namespace
 
@@ -222,10 +230,10 @@ void ArdfScheduler::Tick() {
       if (tx_->GetState() != TxState::kTxReady) {
         break;
       }
-      // Callsign first, every slot (spec 10.5). The ARDF identifier is a
+      // "DE <callsign>" first, every slot (spec 10.5). The ARDF identifier is a
       // competition marker, not a station identification, so the callsign is
       // required separately.
-      SendWithWordGap(keyer_, callsign_);
+      SendDeCallsign(keyer_, callsign_);
       tx_->SetKeyed(true);
       last_call_us_ = NowUs();
       phase_ = Phase::kSendingCall;
@@ -249,13 +257,13 @@ void ArdfScheduler::Tick() {
       }
 
       if (morse::IsContinuous(ardf_id_)) {
-        // MO runs until stopped, re-identifying every 10 minutes. The
+        // MO and S run until stopped, re-identifying every 10 minutes. The
         // insertion happens between repetitions, never mid-character.
         const int64_t since_call_us = NowUs() - last_call_us_;
         if (since_call_us >=
             static_cast<int64_t>(hardware_config::kMoCallIntervalS) *
                 kUsPerSecond) {
-          SendWithWordGap(keyer_, callsign_);
+          SendDeCallsign(keyer_, callsign_);
           last_call_us_ = NowUs();
           phase_ = Phase::kSendingCall;
           break;
